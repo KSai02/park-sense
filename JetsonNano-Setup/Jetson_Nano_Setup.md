@@ -105,3 +105,129 @@ To prepare your microSD card, you’ll need a computer with Internet connection 
     <img src="./images/install.png" width="70%">
 </div>
    This process might take a few minutes.
+
+##  Access the Terminal
+
+Once you've completed the initial setup, you will be presented with the Ubuntu desktop.  
+- **Open the Terminal** by clicking the terminal icon or by pressing `Ctrl + Alt + T`.
+
+## Essential Tools Installation
+
+### 1. Update and Upgrade System
+Open a terminal and run:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+This ensures your system packages are up to date.
+
+---
+
+### 2. Install `jetson-utils` and `jetson-inference`
+
+```bash
+git clone --recursive https://github.com/dusty-nv/jetson-inference
+cd jetson-inference
+mkdir build
+cd build
+cmake ../
+make -j$(nproc)
+sudo make install
+sudo ldconfig
+```
+
+### Jetson-utils and Jetson-inference Version Check
+
+This guide will help you verify if the `jetson-utils` and `jetson-inference` libraries are installed correctly on your Jetson device.
+
+### Verify `jetson-utils` Installation
+
+To confirm that `jetson-utils` is properly installed, run the following command in your terminal:
+
+```bash
+python3 -c "import jetson.utils; print(jetson.utils.__version__)"
+```
+
+---
+
+### 3. Install `jtop` (System Monitor for Jetson)
+
+```bash
+sudo apt install -y python3-pip
+sudo pip3 install -U jetson-stats
+```
+
+To run `jtop`:
+```bash
+jtop
+```
+
+<div align='center'>
+    <img src="./images/jtop.jpeg" width="70%">
+</div>
+
+---
+
+# 4. Installing OpenCV 4.11.0 on Jetson Nano (with Enlarged Swap Memory)
+
+Installing OpenCV on Jetson Nano requires more RAM than available by default. This guide expands swap memory using your SD card and installs OpenCV via a script.
+
+---
+<div align='center'>
+    <img src="./images/opencv.webp" width="100%">
+</div>
+
+---
+##  Step 1: Update & Install Tools
+
+Start with a clean update and install tools.
+
+```bash
+sudo apt-get update
+sudo apt-get upgrade
+sudo apt-get install nano
+sudo apt-get install dphys-swapfile
+$ sudo nano /sbin/dphys-swapfile
+# give the required memory size
+$ sudo nano /etc/dphys-swapfile
+# reboot afterwards
+$ sudo reboot
+```
+---
+<div align='center'>
+    <img src="./images/swap1.png" width="100%">
+</div>
+
+---
+# OpenCV 4.11.0 Installation Script for Jetson Nano
+---
+<div align='center'>
+    <img src="./images/nocv.png
+    " width="100%">
+</div>
+
+
+```bash
+$ free -m
+# you need at least a total of 8.5 GB!
+$ wget https://github.com/Qengineering/Install-OpenCV-Jetson-Nano/raw/main/OpenCV-4-11-0.sh
+$ sudo chmod 755 ./OpenCV-4-11-0.sh
+$ ./OpenCV-4-11-0.sh
+# once the installation is done...
+$ rm OpenCV-4-11-0.sh
+# remove the dphys-swapfile now
+$ sudo /etc/init.d/dphys-swapfile stop
+$ sudo apt-get remove --purge dphys-swapfile
+# just a tip to save an additional 275 MB
+$ sudo rm -rf ~/opencv
+$ sudo rm -rf ~/opencv_contrib
+```
+
+
+The whole installation will take 2-3 hours to complete.
+
+---
+<div align='center'>
+    <img src="./images/yescv.jpeg" width="100%">
+</div>

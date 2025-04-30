@@ -227,7 +227,14 @@ $ sudo rm -rf ~/opencv_contrib
 
 The whole installation will take 2-3 hours to complete.
 
+```bash
+python3 -c "import cv2; print("OpenCV version:", cv2.__version__)"
+OpenCV version: 4.11.0
+```
+
+OpenCV version: 4.11.0
 ---
 <div align='center'>
     <img src="./images/yescv.jpeg" width="100%">
 </div>
+

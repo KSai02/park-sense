@@ -1,60 +1,101 @@
-import React, { useState, useEffect } from 'react';
-import { Grid, Button, Modal, Typography, Card, CardContent } from '@mui/material';
+import React, { useEffect, useState } from 'react';
+import {
+  Card, CardContent, Typography, Grid,
+  Button, TextField, Dialog, DialogTitle, DialogContent
+} from '@mui/material';
 
 const AdminDashboard = () => {
   const [slots, setSlots] = useState([]);
-  const [open, setOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [newSlot, setNewSlot] = useState('');
+
+  const fetchSlots = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/admin/slots');
+      const data = await res.json();
+      setSlots(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleAddSlot = async () => {
+    try {
+      await fetch('http://localhost:5000/api/admin/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotNumber: newSlot }),
+      });
+      setNewSlot('');
+      fetchSlots();
+      setOpenDialog(false);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    const fetchSlots = async () => {
-      const response = await fetch('http://localhost:5000/api/admin/slots');
-      const data = await response.json();
-      setSlots(data);
-    };
     fetchSlots();
   }, []);
 
-  const handleSlotClick = (slot) => {
-    setSelectedSlot(slot);
-    setOpen(true);
-  };
-
-  const handleClose = () => setOpen(false);
-
   return (
-    <div style={{ padding: '20px' }}>
-      <Typography variant="h4" align="center" gutterBottom>
-        Admin Dashboard
-      </Typography>
-      <Grid container spacing={2} justifyContent="center">
+    <div style={{ padding: '2rem' }}>
+      <Typography variant="h4" gutterBottom>Admin Dashboard</Typography>
+      <Button variant="contained" color="primary" onClick={() => setOpenDialog(true)}>
+        Add New Slot
+      </Button>
+
+      <Grid container spacing={2} style={{ marginTop: '1rem' }}>
         {slots.map((slot) => (
-          <Grid item key={slot._id}>
-            <Button
-              variant="contained"
-              color={slot.isOccupied ? 'error' : 'success'}
-              onClick={() => handleSlotClick(slot)}
+          <Grid item xs={2} key={slot._id}>
+            <Card
+              style={{
+                backgroundColor: slot.isOccupied ? '#f44336' : '#4caf50',
+                cursor: 'pointer',
+                color: 'white'
+              }}
+              onClick={() => setSelectedSlot(slot)}
             >
-              {slot.slotNumber}
-            </Button>
+              <CardContent>
+                <Typography variant="h6">{slot.slotNumber}</Typography>
+              </CardContent>
+            </Card>
           </Grid>
         ))}
       </Grid>
 
-      <Modal open={open} onClose={handleClose}>
-        <Card style={{ margin: '100px auto', width: '400px' }}>
-          <CardContent>
-            <Typography variant="h5" gutterBottom>
-              Vehicle Details for {selectedSlot?.slotNumber}
-            </Typography>
-            <Typography variant="body1">License Plate: {selectedSlot?.licensePlate}</Typography>
-            <Typography variant="body1">Mobile Number: {selectedSlot?.mobileNumber}</Typography>
-            <Typography variant="body1">Email: {selectedSlot?.email}</Typography>
-            <Typography variant="body1">Entry Time: {selectedSlot?.entryTime}</Typography>
-            <Typography variant="body1">Exit Time: {selectedSlot?.exitTime}</Typography>
-          </CardContent>
-        </Card>
-      </Modal>
+      {selectedSlot && (
+        <div style={{ marginTop: '2rem' }}>
+          <Typography variant="h5">Slot: {selectedSlot.slotNumber}</Typography>
+          {selectedSlot.visitor ? (
+            <>
+              <Typography>Mobile: {selectedSlot.visitor.mobileNumber}</Typography>
+              <Typography>License: {selectedSlot.visitor.licensePlate}</Typography>
+              <Typography>Email: {selectedSlot.visitor.email || 'N/A'}</Typography>
+              <Typography>Entry Time: {new Date(selectedSlot.visitor.entryTime).toLocaleString()}</Typography>
+            </>
+          ) : (
+            <Typography>No visitor assigned</Typography>
+          )}
+        </div>
+      )}
+
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Add Parking Slot</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Slot Number"
+            value={newSlot}
+            onChange={(e) => setNewSlot(e.target.value)}
+            margin="dense"
+          />
+          <Button onClick={handleAddSlot} variant="contained" color="primary" style={{ marginTop: '1rem' }}>
+            Add Slot
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

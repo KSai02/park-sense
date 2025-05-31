@@ -11,64 +11,15 @@ ParkSense is a comprehensive parking management system that uses QR codes and li
 - Rover-based slot verification
 - Frequent visitor tracking
 
-## Prerequisites
-
-- Node.js (v14 or higher)
-- MongoDB
-- npm or yarn
-
 ## Project Structure
 
 ```
 parksense/
-├── backend/           # Node.js/Express backend
-├── frontend/          # React frontend
-├── models/           # Database models
+├── backend/          
+├── frontend/         
+├── models/          
 └── README.md
 ```
-
-## Setup Instructions
-
-### Backend Setup
-
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Create a .env file with the following variables:
-   ```
-   MONGODB_URI=mongodb://localhost:27017/parksense
-   PORT=5000
-   ```
-
-4. Start the backend server:
-   ```bash
-   npm run dev
-   ```
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the frontend development server:
-   ```bash
-   npm start
-   ```
-
 ## Usage
 
 ### Visitor Flow
@@ -110,7 +61,3 @@ parksense/
 3. Commit your changes
 4. Push to the branch
 5. Create a new Pull Request
-
-## License
-
-This project is licensed under the MIT License.

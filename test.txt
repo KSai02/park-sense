@@ -71,3 +71,41 @@ docker exec -it <container_id> /bin/sh
 docker port c1a2b3
 
 docker stop <container_id>
+///////////////////////////////////////////////////////////////////////////////////////////////
+5)
+#docker-compose.yml
+
+version: '3.8'
+
+services:
+  metro-app:
+    image: <your-dockerhub-username>/metro-booking-app:v1
+    container_name: metro-app
+    ports:
+      - "8080:8080"           # Host:Container port mapping
+    depends_on:
+      - db
+    environment:
+      # Example environment variable (if needed)
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+    restart: always
+
+  db:
+    image: mysql:8.0
+    container_name: metro-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: metro
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+
+volumes:
+  db_data:
+///////////////////////
+

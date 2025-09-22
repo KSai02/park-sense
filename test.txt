@@ -109,3 +109,27 @@ volumes:
   db_data:
 ///////////////////////
 
+How to Start Services
+
+Start in detached mode (recommended):
+
+docker-compose up -d
+
+
+-d runs containers in the background.
+
+View running services:
+
+docker-compose ps
+
+
+View combined logs:
+
+docker-compose logs -f
+
+
+Stop all services:
+
+docker-compose down
+
+////////////

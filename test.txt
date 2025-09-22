@@ -41,4 +41,33 @@ Push the image
 
 docker push <your-dockerhub-username>/metro-booking-app:v1
 /////////////////////////////////////////////////////////////////////////////////////
+#how to get container id
+docker ps
 
+sbq :
+
+"docker build -t metro-booking-app ." #dot included
+
+docker run -d -p 9090:8080 metro-booking-app
+
+docker run -d -p 8081:8080 metro-booking-app
+docker run -d -p 8082:8080 metro-booking-app
+
+git pull origin main
+docker build -t metro-booking-app:v2 .
+
+docker images
+
+docker image prune
+
+docker stop <old_container_id>
+docker rm <old_container_id>
+docker run -d -p 8085:8080 metro-booking-app:v2
+
+docker exec -it <container_id> /bin/sh
+
+docker exec -it <container_id> /bin/sh
+
+docker port c1a2b3
+
+docker stop <container_id>

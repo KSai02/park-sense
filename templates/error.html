@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Park Sense{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 500px; margin: 4rem auto; text-align: center;">
+    <h1 style="color: var(--primary-color); margin-bottom: 1rem;">Error</h1>
+    
+    <div class="alert alert-danger" style="margin-bottom: 2rem;">
+        {{ error }}
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('index') }}" class="btn" style="margin-right: 1rem;">Back to Home</a>
+        <a href="{{ url_for('login') }}" class="btn">Login</a>
+    </div>
+</div>
+{% endblock %} 

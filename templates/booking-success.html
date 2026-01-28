@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Booking Successful</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial;
+            padding-top: 80px;
+        }
+        .card {
+            display: inline-block;
+            padding: 30px 50px;
+            background: #f9f9f9;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+        a.download {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 20px;
+            background: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🎉 Slot Booked Successfully!</h2>
+        <p><b>Plate:</b> {{ plate }}</p>
+        <p><b>Lot:</b> {{ lot_id }}</p>
+        <p><b>Slot:</b> {{ slot_no }}</p>
+        <a class="download" href="{{ url_for('download_ticket') }}">Download Ticket</a>
+    </div>
+</body>
+</html>

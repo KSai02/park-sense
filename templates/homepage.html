@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ParkSense - Intelligent Urban Parking</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script> -->
+<script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.rings.min.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.net.min.js"></script> -->
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      color: white;
+      background: radial-gradient(ellipse at top, #0a0a0a, #000000);
+      overflow-x: hidden;
+    }
+
+    #vanta-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: linear-gradient(-45deg, #0f172a, #1e3a8a, #0f172a, #1e3a8a);
+      background-size: 400% 400%;
+      animation: gradientMove 30s ease infinite;
+      opacity: 60%;
+    }
+    #animated-bg{
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      background: linear-gradient(-45deg, #0f172a, #1e3a8a, #0f172a, #1e3a8a);
+      background-size: 400% 400%;
+      animation: gradientMove 30s ease infinite;
+    }
+
+    @keyframes gradientMove {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .fade-in {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: all 1s ease-out;
+    }
+
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .scroll-indicator {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: #3b82f6;
+      z-index: 50;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-indicator" id="scroll-progress"></div>
+
+<!-- Background Animation -->
+<div id="animated-bg"></div>
+
+
+<!-- Navbar -->
+<!-- <header id="navbar" class="fixed top-0 left-0 w-full flex justify-between items-center px-8 py-4 border-b border-gray-800 z-40 transition-all duration-300 backdrop-blur">
+  <div class="flex items-center space-x-3">
+    <img src="https://img.icons8.com/external-flat-icons-inmotus-design/67/000000/external-parking-smart-city-flat-icons-inmotus-design.png" class="w-7 h-7" alt="Park Icon">
+    <span class="text-2xl font-semibold text-blue-500">ParkSense</span>
+  </div>
+  <nav class="hidden md:flex space-x-6 text-sm text-gray-300">
+    <a href="#hero" class="hover:text-blue-400">Home</a>
+    <a href="#features" class="hover:text-blue-400">Features</a>
+    <a href="#testimonials" class="hover:text-blue-400">Testimonials</a>
+    <a href="#pricing" class="hover:text-blue-400">Pricing</a>
+    <a href="{{url_for('login')}}" id="login" class="hover:text-blue-400">Login</a>
+  </nav>
+</header> -->
+
+
+<header id="navbar" class="fixed top-0 left-0 w-full flex justify-between items-center px-8 py-4 border-b border-gray-800 z-40 transition-all duration-300 backdrop-blur bg-transparent">
+    <div class="flex items-center space-x-3">
+      <img src="https://img.icons8.com/external-flat-icons-inmotus-design/67/000000/external-parking-smart-city-flat-icons-inmotus-design.png" class="w-7 h-7" alt="Park Icon">
+      <span class="text-2xl font-semibold text-blue-500">ParkSense</span>
+    </div>
+  
+    <!-- Desktop Navigation -->
+    <nav class="hidden md:flex space-x-6 text-sm text-gray-300">
+      <a href="#hero" class="hover:text-blue-400">Home</a>
+      <a href="#features" class="hover:text-blue-400">Features</a>
+      <a href="#testimonials" class="hover:text-blue-400">Testimonials</a>
+      <a href="#pricing" class="hover:text-blue-400">Pricing</a>
+      <a href="{{url_for('login')}}" id="login" class="hover:text-blue-400">Login</a>
+    </nav>
+  
+    <!-- Mobile Hamburger -->
+    <div class="md:hidden">
+      <button id="mobileMenuToggle" class="text-gray-300 focus:outline-none">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"
+             viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round"
+                d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+  
+  <!-- Mobile Navigation -->
+  <nav id="mobileMenu" class="hidden md:hidden flex flex-col items-start px-8 py-4 bg-black/90 backdrop-blur border-b border-gray-800 z-30">
+    <a href="#hero" class="py-2 text-sm text-gray-300 hover:text-blue-400">Home</a>
+    <a href="#features" class="py-2 text-sm text-gray-300 hover:text-blue-400">Features</a>
+    <a href="#testimonials" class="py-2 text-sm text-gray-300 hover:text-blue-400">Testimonials</a>
+    <a href="#pricing" class="py-2 text-sm text-gray-300 hover:text-blue-400">Pricing</a>
+    <a href="{{url_for('login')}}" class="py-2 text-sm text-gray-300 hover:text-blue-400">Login</a>
+  </nav>
+  
+
+
+<!-- Hero Section -->
+<section id="hero" class="pt-32 flex flex-col md:flex-row justify-between items-center px-8 py-24 gap-10 fade-in">
+<div id="vanta-bg" class="absolute inset-0 -z-10"></div>
+  <div class="max-w-xl">
+    <h1 class="text-5xl font-extrabold leading-tight text-blue-400 mb-4">
+      Rethink Parking <br> with AI & Automation
+    </h1>
+    <p class="text-gray-300 mb-6">
+      ParkSense is revolutionizing urban mobility with intelligent, real-time parking detection, license plate scanning, and secure access – all powered by edge AI and computer vision.
+    </p>
+    <button class="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded font-semibold transition" onclick="window.location.href='{{ url_for('book_slot_form') }}'">
+      Book Your Slot
+    </button>
+  </div>
+  <!-- <div class="w-full md:w-1/2 h-64 bg-gray-900 rounded-2xl flex items-center justify-center border border-gray-700">
+    <span class="text-gray-500">[ Rover Animation Placeholder ]</span>
+  </div> -->
+</section>
+
+<!-- Features Section -->
+<section id="features" class="bg-[#0d0d0d] px-8 py-20 text-center fade-in">
+  <h2 class="text-3xl font-bold mb-4 text-white">Why ParkSense?</h2>
+  <p class="text-gray-400 max-w-2xl mx-auto mb-12">
+    Designed for smart cities. Built for seamless parking. Trusted by operators.
+  </p>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="bg-[#111111] border border-gray-800 p-6 rounded-lg shadow hover:shadow-blue-500/10 transition">
+      <h3 class="text-xl font-semibold mb-2 text-blue-400">AI-Based Detection</h3>
+      <p class="text-gray-400 text-sm">Autonomous rovers detect empty and occupied slots using real-time computer vision.</p>
+    </div>
+    <div class="bg-[#111111] border border-gray-800 p-6 rounded-lg shadow hover:shadow-blue-500/10 transition">
+      <h3 class="text-xl font-semibold mb-2 text-blue-400">License Plate Scanning</h3>
+      <p class="text-gray-400 text-sm">Secure your spot with OCR-powered plate recognition and unauthorized parking alerts.</p>
+    </div>
+    <div class="bg-[#111111] border border-gray-800 p-6 rounded-lg shadow hover:shadow-blue-500/10 transition">
+      <h3 class="text-xl font-semibold mb-2 text-blue-400">Smart Management Portal</h3>
+      <p class="text-gray-400 text-sm">Admins and operators monitor live telemetry, mission control, and booking analytics.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials Section -->
+<section id="testimonials" class="px-8 py-20 fade-in">
+  <h2 class="text-3xl font-bold text-center mb-12">What Our Users Say</h2>
+  <div class="grid md:grid-cols-3 gap-8">
+    <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+      <p class="text-gray-300">"Absolutely transformed our parking operations. Setup was quick and the detection accuracy is top-notch!"</p>
+      <p class="mt-4 text-blue-400 font-semibold">– MetroPark Admin</p>
+    </div>
+    <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+      <p class="text-gray-300">"We now get alerts for unauthorized parking in real-time. Our security has improved significantly."</p>
+      <p class="mt-4 text-blue-400 font-semibold">– CityZone Operations</p>
+    </div>
+    <div class="bg-gray-900 p-6 rounded-xl border border-gray-700">
+      <p class="text-gray-300">"The ParkSense dashboard is sleek, informative, and helps us visualize parking trends like never before."</p>
+      <p class="mt-4 text-blue-400 font-semibold">– Urban Planner</p>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing Section -->
+<section id="pricing" class="bg-[#0d0d0d] px-8 py-20 text-center fade-in">
+  <h2 class="text-3xl font-bold text-white mb-6">Choose Your Plan</h2>
+  <div class="grid md:grid-cols-3 gap-8">
+    <div class="bg-[#111111] p-6 rounded-xl border border-gray-800">
+      <h3 class="text-xl font-semibold mb-2 text-blue-400">Starter</h3>
+      <p class="text-gray-300 mb-4">$0/month</p>
+      <ul class="text-sm text-gray-400 space-y-2 mb-4">
+        <li>✔ Basic Slot Detection</li>
+        <li>✔ Email Alerts</li>
+        <li>✘ No Analytics</li>
+      </ul>
+      <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Get Started</button>
+    </div>
+    <div class="bg-[#111111] p-6 rounded-xl border border-blue-500 shadow-xl scale-105">
+      <h3 class="text-xl font-semibold mb-2 text-blue-400">Pro</h3>
+      <p class="text-gray-300 mb-4">$49/month</p>
+      <ul class="text-sm text-gray-400 space-y-2 mb-4">
+        <li>✔ Slot + Plate Detection</li>
+        <li>✔ Dashboard + Alerts</li>
+        <li>✔ Live Feed Support</li>
+      </ul>
+      <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Upgrade</button>
+    </div>
+    <div class="bg-[#111111] p-6 rounded-xl border border-gray-800">
+      <h3 class="text-xl font-semibold mb-2 text-blue-400">Enterprise</h3>
+      <p class="text-gray-300 mb-4">Contact Us</p>
+      <ul class="text-sm text-gray-400 space-y-2 mb-4">
+        <li>✔ Full API Access</li>
+        <li>✔ Dedicated Support</li>
+        <li>✔ On-Site Deployment</li>
+      </ul>
+      <button class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded">Contact Sales</button>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="px-8 py-8 border-t border-gray-800 text-center text-gray-600 text-sm">
+  © 2025 ParkSense. Designed for the future of urban parking.
+</footer>
+
+<!-- Scroll Animation + Scrollbar Script -->
+<script>
+
+// VANTA.DOTS({
+//   el: "#vanta-bg",
+//   mouseControls: true,
+//   touchControls: true,
+//   gyroControls: false,
+//   minHeight: 200.00,
+//   minWidth: 200.00,
+//   scale: 1.00,
+//   scaleMobile: 1.00
+// });
+
+
+// VANTA.NET({
+//   el: "#vanta-bg",
+//   mouseControls: true,
+//   touchControls: true,
+//   gyroControls: false,
+//   minHeight: 200.00,
+//   minWidth: 200.00,
+//   scale: 1.00,
+//   scaleMobile: 1.00
+// })
+
+VANTA.RINGS({
+  el: "#vanta-bg",
+  mouseControls: true,
+  touchControls: true,
+  gyroControls: false,
+  minHeight: 200.00,
+  minWidth: 200.00,
+  scale: 1.00,
+  scaleMobile: 1.00
+})
+
+  // Scroll Animatio
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+  const scrollProgress = document.getElementById('scroll-progress');
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.body.scrollHeight - window.innerHeight;
+    const scrollPercent = (scrollTop / docHeight) * 100;
+    scrollProgress.style.width = scrollPercent + '%';
+  });
+  
+VANTA.DOTS({
+  el: "#your-element-selector",
+  mouseControls: true,
+  touchControls: true,
+  gyroControls: false,
+  minHeight: 200.00,
+  minWidth: 200.00,
+  scale: 1.00,
+  scaleMobile: 1.00
+})
+  const navbar = document.getElementById('navbar');
+
+  window.addEventListener('scroll', () => {
+    const scrollTop = window.scrollY;
+    const docHeight = document.body.scrollHeight - window.innerHeight;
+    const scrollPercent = (scrollTop / docHeight) * 100;
+
+    if (scrollPercent < 7) {
+      navbar.classList.remove('bg-gray-900', 'bg-opacity-80');
+      navbar.classList.add('bg-transparent');
+    } else {
+      navbar.classList.remove('bg-transparent');
+      navbar.classList.add('bg-gray-900', 'bg-opacity-80');
+    }
+  });
+
+
+</script>
+</body>
+</html>

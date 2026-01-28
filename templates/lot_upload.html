@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Lot Waypoints - Park Sense{% endblock %}
+
+{% block content %}
+<div class="container"> {# Or whatever main container class is used in base.html #}
+    <div class="card" style="margin-top: 2rem; padding: 1.5rem;"> {# Assuming 'card' style exists #}
+        <h2 style="color: var(--primary-color); margin-bottom: 1.5rem;">Upload QGC Waypoints File</h2>
+        
+        <form id="waypointsUploadForm" enctype="multipart/form-data">
+            <div style="margin-bottom: 1rem;">
+                <label for="lot_id">Lot Number (e.g., L1):</label>
+                <input type="text" id="lot_id" name="lot_id" class="form-control" required> {# Assuming form-control for styling #}
+            </div>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <label for="waypointsFile">Select Waypoints File (.waypoints or .txt):</label>
+                <input type="file" id="waypointsFile" name="waypointsFile" class="form-control-file" accept=".txt,.waypoints" required> {# Assuming form-control-file for styling #}
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Upload</button> {# Assuming btn and btn-primary classes #}
+        </form>
+        
+        <div id="uploadResult" style="margin-top: 1.5rem;">
+            <!-- Upload status will appear here -->
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('waypointsUploadForm');
+    const resultDiv = document.getElementById('uploadResult');
+
+    if (form) {
+        form.onsubmit = async function(event) {
+            event.preventDefault();
+            resultDiv.innerHTML = '<p>Uploading, please wait...</p>'; // Provide feedback
+
+            let formData = new FormData(this);
+
+            try {
+                const response = await fetch("{{ url_for('upload_waypoints_data') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    let errorText = `HTTP error! status: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorText = errorData.message || errorText;
+                    } catch (e) {
+                        errorText = await response.text() || errorText;
+                    }
+                    throw new Error(errorText);
+                }
+
+                const data = await response.json();
+
+                if (data.status === 'success') {
+                    resultDiv.innerHTML = `<div style="color: var(--success-color, green); border: 1px solid var(--success-color, green); padding: 10px; border-radius: 4px;">` +
+                                          `<strong>Success!</strong> Waypoints uploaded for lot: <strong>${data.lot_id}</strong>.<br>` +
+                                          `Total waypoints processed: ${data.waypoints_count}.<br>` +
+                                          `Identified slots (delay=2s): ${data.slots_count}.` +
+                                          `</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div style="color: var(--error-color, red); border: 1px solid var(--error-color, red); padding: 10px; border-radius: 4px;">` +
+                                          `<strong>Error:</strong> ${data.message || 'Unknown error occurred.'}` +
+                                          `</div>`;
+                }
+            } catch (error) {
+                console.error('Error submitting waypoint form:', error);
+                resultDiv.innerHTML = `<div style="color: var(--error-color, red); border: 1px solid var(--error-color, red); padding: 10px; border-radius: 4px;">` +
+                                      `<strong>Failed to upload:</strong> ${error.message}` +
+                                      `</div>`;
+            }
+        };
+    } else {
+        console.error("Waypoints upload form not found.");
+        if(resultDiv) resultDiv.innerHTML = "<p style='color:red;'>Error: Form element not found.</p>";
+    }
+});
+</script>
+{% endblock %}

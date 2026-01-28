@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}Park Sense{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.dots.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --primary: #FF2D2D;
+      --accent: #FFD700;
+      --bg: radial-gradient(ellipse at top, #0a0a0a, #000000);
+
+      --card-bg: rgba(20, 20, 25, 0.7);
+      --border: #222;
+      --text: #FFFFFF;
+      --text-muted: #AAA;
+      --glow: 0 0 15px rgba(255, 45, 45, 0.5);
+      --border-color: #21afd6;
+    }
+    .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      padding:0 15px;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 1.5rem 2rem;
+      background: transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #logo {
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      filter: drop-shadow(var(--glow));
+    }
+    
+    nav a {
+      color: var(--text);
+      text-decoration: none;
+      margin-left: 1.5rem;
+      font-weight: 500;
+      transition: color 0.3s;
+      font-weight: bold;
+    }
+
+    nav a:hover {
+      color: skyblue;
+    }
+
+    main.wrapper {
+      flex: 1;
+      padding-top: 10px;
+    }
+    .card {
+            background-color: var(--accent-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            box-shadow: 1px 10px 6px rgba(224, 228, 249, 0.1);
+        }
+        .main-content {
+            padding: 2rem 0;
+        }
+
+
+    .card-login{
+      background: var(--card-bg);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgb(97, 119, 134);
+      border-radius: 16px;
+      background-color: #192027;
+      padding: 3rem 2.5rem;
+      box-shadow: 0 2px 40px rgba(76, 133, 213, 0.15);
+      max-width: 400px;
+      width: 100%;
+    }
+
+    .card h2 {
+      margin-bottom: 1.5rem;
+      text-align: center;
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.75rem;
+      background-color: #111;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: var(--glow);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.9rem;
+      background: var(--primary);
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      color: var(--text);
+      text-transform: uppercase;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .btn:hover {
+      background: #cc0000;
+      transform: scale(1.02);
+      box-shadow: var(--glow);
+    }
+
+    .text-muted {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+    }
+    
+    .grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+    {% block extra_css %}{% endblock %}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="text-2xl font-semibold text-blue-500" id="logo">Park Sense</div>
+    <nav>
+      {% block nav_links %}
+      <a href="/">Home</a>
+      {% endblock %}
+    </nav>
+  </header>
+
+  <main class="wrapper">
+    <div class="scroll-bar"></div>
+    <div class="container">
+    {% block content %}{% endblock %}
+    </div >
+  </main>
+
+  <footer>
+    © 2025 Park Sense. All rights reserved.
+  </footer>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

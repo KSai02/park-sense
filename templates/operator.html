@@ -1,0 +1,772 @@
+{% extends "base.html" %}
+
+{% block title %}Operator Dashboard - Park Sense{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('operator') }}">Dashboard</a>
+<a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="operator-navbar" style="background: var(--card-bg); padding: 1rem; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+    <div style="display: flex; gap: 1rem;">
+        <button class="nav-btn active" onclick="showSection('rover-operations')" id="rover-btn">Rover Operations</button>
+        <button class="nav-btn" onclick="showSection('parking-slots')" id="parking-btn">Parking Slots</button>
+    </div>
+</div>
+
+<!-- Rover Operations Section -->
+<div id="rover-operations" class="section active" style="display:block ;">
+    <div class="grid grid-2">
+        <!-- Live Feed -->
+        <div class="card">
+            <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Rover Live Feed</h2>
+            <div id="rover-feed" style="background: #000; min-height: 300px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                <p>Connecting to rover feed...</p>
+            </div>
+        </div>
+
+        <!-- Rover Controls -->
+        <div class="card">
+            <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Rover Controls</h2>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <button class="ConnectBtn">Connect to Rover</button>
+                <button class="armBtn" >ARM</button>
+                <button class="startMissionBtn">Start Mission</button>
+                <button class="rtlBtn" onclick="returnToLaunch()">RTL (Return to Launch)</button>
+                <button class="btn" onclick="showTelemetry()">Telemetry Data</button>
+            </div>
+        </div>
+    </div>
+    <div id="status-message" style="display: none;"></div>
+    <!-- Current Coordinates -->
+    <div class="card" style="margin-top: 2rem;">
+        <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Current Coordinates</h2>
+        <div id="coordinates-display" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Latitude</h3>
+                <p style="font-size: 1.5rem; color: var(--light-text);" id="current-lat">-</p>
+            </div>
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Longitude</h3>
+                <p style="font-size: 1.5rem; color: var(--light-text);" id="current-lng">-</p>
+            </div>
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Altitude</h3>
+                <p style="font-size: 1.5rem; color: var(--light-text);" id="current-alt">-</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Telemetry Modal -->
+    <div id="telemetry-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close" onclick="closeTelemetry()">&times;</span>
+            <h2>Telemetry Data</h2>
+            <div id="telemetry-data">
+                <!-- Telemetry data will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Parking Slots Section -->
+<div id="parking-slots" class="section" style="display: none;">
+    <div class="grid grid-3">
+        <!-- Map -->
+        <div class="card" style="grid-column: span 2;">
+            <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Parking Lots Map</h2>
+            <h3 id="lot-title" style="color: var(--primary-color); margin-bottom: 0.5rem;">Parking Map</h3>
+            <p id="spots-occupied-display" style="margin-bottom: 1rem; color: var(--gray-text);">Spots: 0/0</p>
+            <div id="parking-slots-container" style="height: 450px; background: #f0f0f0; border-radius: 8px; position: relative; overflow-y: auto; padding: 1rem;">
+                <p style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666;">Select a lot to view slots.</p>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="card">
+            <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Lot Management</h2>
+
+            <!-- Lot Selector -->
+            <div style="margin-bottom: 1rem;">
+                <h3 style="color: var(--gray-text); font-size: 1rem; margin-bottom: 0.5rem;">Select Lot</h3>
+                <div id="lot-selector-loading" style="display: none; margin-bottom: 0.5rem;">Loading lots...</div>
+                <div id="lot-selector-buttons" style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                    <!-- Lot buttons will be injected here by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Number of Lots -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="color: var(--gray-text); font-size: 1rem; margin-bottom: 0.5rem;">Total Lots Found</h3>
+                <p style="font-size: 2rem; color: var(--light-text);" id="total-lots">0</p>
+            </div>
+
+            <!-- Upload New Lot -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="color: var(--gray-text); font-size: 1rem; margin-bottom: 0.5rem;">Add New Lot</h3>
+                <input type="file" id="waypoint-file" accept=".waypoints" style="margin-bottom: 1rem; width: 100%;">
+                <button class="btn" onclick="window.location.href='{{ url_for('upload_waypoints_data') }}';">
+                    Upload Waypoints File
+                  </button>
+                  
+                <p style="font-size: 0.8rem; color: var(--gray-text); margin-top: 0.5rem;">⚠️ Check simulation for current waypoints before uploading</p>
+            </div>
+
+            <!-- Update Parking Slot -->
+            <div>
+                <h3 style="color: var(--gray-text); font-size: 1rem; margin-bottom: 0.5rem;">Update Slot</h3>
+                <select id="slot-select" style="width: 100%; margin-bottom: 1rem; padding: 0.5rem;">
+                    <option value="">Select a slot...</option>
+                </select>
+                <select id="status-select" style="width: 100%; margin-bottom: 1rem; padding: 0.5rem;">
+                    <option value="empty">Empty</option>
+                    <option value="occupied">Occupied</option>
+                    <option value="reserved">Reserved</option>
+                    <option value="maintenance">Maintenance</option>
+                </select>
+                <button class="btn" onclick="updateSlotStatus()">Update Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Confirmation Modal -->
+<div id="upload-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <h2>Confirm Upload</h2>
+        <p>Are you sure you want to upload this waypoints file? This will create a new parking lot.</p>
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button class="btn" onclick="confirmUpload()">Yes</button>
+            <button class="btn" onclick="cancelUpload()" style="background: var(--gray-text);">No</button>
+        </div>
+    </div>
+</div>
+
+<style>
+.nav-btn {
+    padding: 0.75rem 1.5rem;
+    background: var(--gray-text);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.nav-btn.active {
+    background: var(--primary-color);
+}
+
+.nav-btn:hover {
+    opacity: 0.8;
+}
+
+.section {
+    display: none;
+}
+
+.section.active {
+    display: block;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    margin: 15% auto;
+    padding: 2rem;
+    border-radius: 8px;
+    width: 80%;
+    max-width: 500px;
+    position: relative;
+}
+
+#status-message {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 500;
+    display: none;
+}
+.status-success {
+    background-color: var(--success-light, #e8f5e9);
+    color: var(--success-dark, #1b5e20);
+    border: 1px solid var(--success-color, #388e3c);
+}
+.status-error {
+    background-color: var(--danger-light, #ffebee);
+    color: var(--danger-dark, #b71c1c);
+    border: 1px solid var(--danger-color, #d32f2f);
+}
+.status-info {
+    background-color: var(--info-light, #202326);
+    color: var(--info-dark);
+        border: 1px solid var(--info-color);
+    }
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--gray-text);
+}
+
+.close:hover {
+    color: var(--light-text);
+}
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+@media (max-width: 768px) {
+    .grid-3 {
+        grid-template-columns: 1fr;
+    }
+    
+    .card[style*="grid-column: span 2"] {
+        grid-column: span 1 !important;
+    }
+}
+</style>
+
+<script>
+let currentFile = null;
+let parkingLots = [];
+let selectedSlot = null;
+let alllots=[];
+
+document.addEventListener('DOMContentLoaded', () => {
+    const ConnectBtn = document.querySelector('.ConnectBtn');
+    ConnectBtn.addEventListener('click', async () => {
+        showStatus('Attempting to connect to Rover (placeholder)...', 'info');
+        try {
+            const response = await fetch('/operator/connect_rover_api', { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showStatus(data.message, 'success');
+            } else {
+                showStatus(data.message || 'Error connecting.', 'error');
+                console.log(data.message);
+            }
+        } catch (error) {
+            console.error('Error connecting to Rover:', error);
+            showStatus('Failed to send connect command.', 'error');
+        }
+    });
+});
+
+async function waitForMissionToFinish(lotId) {
+    let attempts = 0;
+    const maxAttempts = 300;
+
+    while (attempts < maxAttempts) {
+        const response = await fetch(`/operator/mission-status?lot_id=${lotId}`);
+        const data = await response.json();
+
+        if (data.status === 'completed') {
+            return true;
+        } else if (data.status === 'failed') {
+            showStatus(`Lot ${lotId} failed to complete mission.`, 'error');
+            return false;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        attempts++;
+    }
+
+    showStatus(`Lot ${lotId} timed out.`, 'error');
+    return false;
+}
+
+const statusMessageDiv = document.getElementById('status-message');
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+    const armBtn = document.querySelector('.armBtn');
+    armBtn.addEventListener('click', async () => {
+        showStatus('Sending Arm command (placeholder)...', 'info');
+        try {
+            const response = await fetch('/operator/arm-rover', { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showStatus(data.message, 'success');
+            } else {
+                showStatus(data.message || 'Error arming.', 'error');
+            }
+        } catch (error) {
+            console.error('Error arming Rover:', error);
+            showStatus('Failed to send arm command.', 'error');
+        }
+    });
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded');
+
+    const startMissionBtn = document.querySelector('.startMissionBtn');
+    if (!startMissionBtn) {
+        console.error('Start button not found!');
+        return;
+    }
+
+    startMissionBtn.addEventListener('click', async () => {
+        console.log('Start button clicked');
+        showStatus('Fetching parking lots...', 'info');
+
+        try {
+            const lotsResponse = await fetch('/operator/get-lot-s');
+            const lotsData = await lotsResponse.json();
+
+            if (lotsData.status !== 'success' || !Array.isArray(lotsData.lots)) {
+                showStatus('Failed to fetch lot IDs.', 'error');
+                return;
+            }
+
+            const lotIds = lotsData.lots;
+
+            showStatus(`Starting mission sequence: ${lotIds.join(', ')}`, 'info');
+
+            const response = await fetch('/operator/start-patrol', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ lot_ids: lotIds })
+            });
+
+            const data = await response.json();
+
+            if (data.status === 'success') {
+                showStatus('Mission sequence started. Waiting for completion...', 'info');
+
+                // Polling or WebSocket can be used here for live status.
+                // For now, we simulate a wait with dummy progress updates.
+                for (const lotId of lotIds) {
+                    showStatus(`Waiting for Lot ${lotId} mission to finish...`, 'info');
+                    await new Promise(resolve => setTimeout(resolve, 60000)); // Simulated wait 60s per lot
+                    showStatus(`Lot ${lotId} likely completed.`, 'success');
+                }
+
+                // Only show this after all lots are done
+                showStatus('All missions completed.', 'success');
+            } else {
+                showStatus(`Error: ${data.message}`, 'error');
+            }
+
+        } catch (error) {
+            console.error('Error starting patrol:', error);
+            showStatus('Unexpected error occurred.', 'error');
+        }
+    });
+});
+
+// Helper function to display status messages
+function showStatus(message, type = 'info') {
+    const statusArea = document.getElementById('status-message');
+    if (!statusArea) return;
+    statusArea.textContent = message;
+    statusArea.className = `status-${type}`;
+    statusArea.style.display = 'block';
+}
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const rtlBtn = document.querySelector('.rtlBtn');
+    
+    rtlBtn.addEventListener('click', async () => {
+        showStatus('Sending RTL command (placeholder)...', 'info');
+        try {
+            const response = await fetch('/operator/rtl', { method: 'POST' });
+            const data = await response.json();
+            if (data.status === 'success') {
+                showStatus(data.message, 'success');
+            } else {
+                showStatus(data.message || 'Error sending RTL.', 'error');
+            }
+        } catch (error) {
+            console.error('Error sending RTL:', error);
+            showStatus('Failed to send RTL command.', 'error');
+        }
+    });
+});
+
+
+
+function showSection(id) {
+    document.querySelectorAll('.section').forEach(function (section) {
+      section.style.display = 'none';
+    });
+    var target = document.getElementById(id);
+    if (target) {
+      target.style.display = 'block';
+      if (id === 'parking-slots') {
+        loadParkingLots();
+      }
+    } else {
+      console.error('Section not found:', id);
+    }
+}
+
+async function loadParkingLots() {
+    const lotSelectorLoading = document.getElementById('lot-selector-loading');
+    const lotSelectorButtons = document.getElementById('lot-selector-buttons');
+    const totalLotsElement = document.getElementById('total-lots');
+    const parkingSlotsContainer = document.getElementById('parking-slots-container');
+    const lotTitleElement = document.getElementById('lot-title');
+    const spotsOccupiedElement = document.getElementById('spots-occupied-display');
+
+    lotSelectorLoading.style.display = 'block';
+    lotSelectorButtons.innerHTML = '';
+    totalLotsElement.textContent = '0';
+    parkingSlotsContainer.innerHTML = '<p style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: #666;">Select a lot to view slots.</p>';
+    lotTitleElement.textContent = 'Parking Map';
+    spotsOccupiedElement.textContent = 'Spots: 0/0';
+
+    try {
+        const response = await fetch('/operator/get-lots');
+        const data = await response.json();
+        parkingLots = data.lots || [];
+        totalLotsElement.textContent = parkingLots.length;
+        if (parkingLots.length === 0) {
+            lotSelectorButtons.innerHTML = '<p style="color: var(--gray-text);">No parking lots found.</p>';
+            lotSelectorLoading.style.display = 'none';
+            return;
+        }
+        parkingLots.forEach(lot => {
+            const button = document.createElement('button');
+            button.textContent = lot.name;
+            button.className = 'btn';
+            button.onclick = () => selectLot(lot);
+            lotSelectorButtons.appendChild(button);
+        });
+    } catch (error) {
+        console.error('Failed to load parking lots:', error);
+        lotSelectorButtons.innerHTML = '<p style="color: red;">Error loading lots. Check console.</p>';
+    }
+    lotSelectorLoading.style.display = 'none';
+}
+
+function selectLot(lot) {
+    document.getElementById('lot-title').textContent = lot.name;
+    document.getElementById('spots-occupied-display').textContent = `Spots: ${lot.slots.length}/${lot.slots.length}`;
+    const container = document.getElementById('parking-slots-container');
+    container.innerHTML = '';
+    lot.slots.forEach((slot, idx) => {
+        const div = document.createElement('div');
+        div.textContent = `Slot ${idx + 1}`;
+        div.className = 'card';
+        div.style.marginBottom = '0.5rem';
+        container.appendChild(div);
+    });
+    const slotSelect = document.getElementById('slot-select');
+    slotSelect.innerHTML = '<option value="">Select a slot...</option>';
+    lot.slots.forEach((slot, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx + 1;
+        opt.textContent = `Slot ${idx + 1}`;
+        slotSelect.appendChild(opt);
+    });
+}
+
+
+    async function displayLotDetails(lotId) {
+        const slotsContainer = document.getElementById('parking-slots-container');
+        const lotTitleElement = document.getElementById('lot-title');
+        const spotsOccupiedElement = document.getElementById('spots-occupied-display');
+        
+        slotsContainer.innerHTML = '<p style="color: var(--gray-text);">Loading lot details...</p>';
+        lotTitleElement.textContent = `Parking Map - ${lotId}`;
+        spotsOccupiedElement.textContent = 'Spots: 0/0'; // Reset while loading
+
+        try {
+            const response = await fetch(`/operator/get-lots/${lotId}`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const lotData = await response.json();
+
+            if (!lotData || !lotData.slots_info || lotData.slots_info.length === 0) {
+                slotsContainer.innerHTML = '<p style="color: var(--gray-text);">No parking slots identified for this lot.</p>';
+                spotsOccupiedElement.textContent = `Identified Slots: 0`;
+                return;
+            }
+
+            const slots = lotData.slots_info;
+            slotsContainer.innerHTML = ''; // Clear loading/previous state
+
+            slots.forEach((slot) => {
+                const slotDiv = document.createElement('div');
+                slotDiv.className = 'parking-slot'; // Add styling for this class
+                slotDiv.innerHTML = `
+                    <strong>Slot Index: ${slot.index}</strong><br>
+                    Latitude: ${slot.lat ? slot.lat.toFixed(6) : 'N/A'}<br>
+                    Longitude: ${slot.lon ? slot.lon.toFixed(6) : 'N/A'}<br>
+                    Altitude: ${slot.alt ? slot.alt.toFixed(2) : 'N/A'} m
+                `;
+                // Add occupancy status if available in your slot data
+                // slotDiv.style.backgroundColor = slot.occupied ? 'var(--danger-color)' : 'var(--success-color)';
+                slotsContainer.appendChild(slotDiv);
+            });
+            
+            // Update total/occupied spots - this needs actual occupancy data from your system
+            // For now, just display total identified slots
+            spotsOccupiedElement.textContent = `Identified Slots: ${slots.length}`;
+
+        } catch (error) {
+            console.error(`Error loading details for lot ${lotId}:`, error);
+            slotsContainer.innerHTML = `<p style="color: red;">Error loading details for ${lotId}. Check console.</p>`;
+            spotsOccupiedElement.textContent = 'Error';
+        }
+    }
+
+    // Fetch and display lots and slots from DB for operator
+    let operatorLots = [];
+    let currentOperatorLotId = null;
+
+    async function fetchOperatorLots() {
+        try {
+            const response = await fetch('/operator/parking-lots');
+            const data = await response.json();
+            if (data.status === 'success' && Array.isArray(data.lots)) {
+                operatorLots = data.lots;
+                renderOperatorLotButtons();
+                if (operatorLots.length > 0) {
+                    selectOperatorLot(operatorLots[0].lot_id);
+                } else {
+                    renderOperatorParkingSpaces([]);
+                }
+            } else {
+                document.getElementById('operator-lot-selector-buttons').innerHTML = '<p style="color: red;">No lots found.</p>';
+                renderOperatorParkingSpaces([]);
+            }
+        } catch (error) {
+            console.error('Error fetching lots:', error);
+            document.getElementById('operator-lot-selector-buttons').innerHTML = '<p style="color: red;">Error loading lots.</p>';
+            renderOperatorParkingSpaces([]);
+        }
+    }
+
+    function renderOperatorLotButtons() {
+        const lotSelector = document.getElementById('operator-lot-selector-buttons');
+        lotSelector.innerHTML = '';
+        operatorLots.forEach(lot => {
+            const btn = document.createElement('button');
+            btn.className = 'lot-btn';
+            btn.textContent = lot.lot_id || lot.name || 'Lot';
+            btn.id = `operator-lot-${lot.lot_id}`;
+            btn.onclick = () => selectOperatorLot(lot.lot_id);
+            lotSelector.appendChild(btn);
+        });
+    }
+
+    function selectOperatorLot(lotId) {
+        currentOperatorLotId = lotId;
+        document.querySelectorAll('.lot-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById(`operator-lot-${lotId}`);
+        if (activeBtn) activeBtn.classList.add('active');
+        document.getElementById('operator-lot-title').textContent = `Parking Map - ${lotId}`;
+        const lot = operatorLots.find(l => l.lot_id === lotId);
+        renderOperatorParkingSpaces(lot ? lot.slots : []);
+    }
+
+    function renderOperatorParkingSpaces(slots) {
+        const row1 = document.getElementById('operator-parking-row-1');
+        const row2 = document.getElementById('operator-parking-row-2');
+        const row3 = document.getElementById('operator-parking-row-3');
+        row1.innerHTML = '';
+        row2.innerHTML = '';
+        row3.innerHTML = '';
+        if (!slots || slots.length === 0) return;
+        slots.forEach((slot, idx) => {
+            const space = document.createElement('div');
+            space.className = `parking-space ${slot.status}`;
+            space.textContent = slot.slot_number || slot.space_id || `Slot ${idx+1}`;
+            // Optionally add click handler for slot actions
+            if (idx < 12) row1.appendChild(space);
+            else if (idx < 24) row2.appendChild(space);
+            else row3.appendChild(space);
+        });
+        updateOperatorOccupancyCount();
+    }
+
+    function updateOperatorOccupancyCount() {
+        const lot = operatorLots.find(l => l.lot_id === currentOperatorLotId);
+        if (!lot || !lot.slots) {
+            document.getElementById('operator-spots-occupied').textContent = '0/0';
+            return;
+        }
+        const occupied = lot.slots.filter(s => s.status === 'occupied').length;
+        const total = lot.slots.length;
+        document.getElementById('operator-spots-occupied').textContent = `${occupied}/${total}`;
+    }
+
+    // Remove old random/demo lot and slot logic
+    function originalLoadParkingLots() {
+    fetch('/operator/parking-lots')
+        .then(response => response.json())
+        .then(data => {
+            parkingLots = data.lots || [];
+            document.getElementById('total-lots').textContent = parkingLots.length;
+            renderMap();
+            populateSlotSelect();
+        })
+        .catch(error => {
+            console.error('Error loading parking lots:', error);
+        });
+}
+
+function renderMap() {
+    const mapElement = document.getElementById('parking-map');
+    mapElement.innerHTML = '';
+    
+    // Simple map rendering - you can integrate with actual mapping library
+    parkingLots.forEach((lot, index) => {
+        const lotElement = document.createElement('div');
+        lotElement.style.cssText = `
+            position: absolute;
+            left: ${20 + (index % 3) * 30}%;
+            top: ${20 + Math.floor(index / 3) * 25}%;
+            width: 80px;
+            height: 60px;
+            background: ${lot.status === 'occupied' ? '#ff6b6b' : '#51cf66'};
+            border: 2px solid #333;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        `;
+        lotElement.textContent = lot.name || `Lot ${index + 1}`;
+
+        mapElement.appendChild(lotElement);
+    });
+}
+
+
+function populateSlotSelect() {
+    const select = document.getElementById('slot-select');
+    select.innerHTML = '<option value="">Select a slot...</option>';
+    
+    parkingLots.forEach((lot, index) => {
+        const option = document.createElement('option');
+        option.value = lot.id || index;
+        option.textContent = lot.name || `Lot ${index + 1}`;
+        select.appendChild(option);
+    });
+}
+
+function updateSlotStatus() {
+    const slotId = document.getElementById('slot-select').value;
+    const newStatus = document.getElementById('status-select').value;
+    
+    if (!slotId || !newStatus) {
+        alert('Please select a slot and status');
+        return;
+    }
+    
+    fetch('/operator/update-slot-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slotId, status: newStatus })
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || 'Slot status updated successfully');
+        loadParkingLots();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to update slot status');
+    });
+}
+
+function uploadWaypoints() {
+    const fileInput = document.getElementById('waypoint-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Please select a waypoints file');
+        return;
+    }
+    
+    if (!file.name.endsWith('.waypoints')) {
+        alert('Please select a valid .waypoints file');
+        return;
+    }
+    
+    // Extract lot number from filename
+    const lotNumber = file.name.replace('.waypoints', '');
+    if (!/^\d+$/.test(lotNumber)) {
+        alert('File name must be in format: lot_number.waypoints (e.g., 1.waypoints)');
+        return;
+    }
+    
+    currentFile = file;
+    document.getElementById('upload-modal').style.display = 'block';
+}
+
+function confirmUpload() {
+    if (!currentFile) return;
+    
+    const formData = new FormData();
+    formData.append('waypoints', currentFile);
+    
+    fetch('/operator/upload-waypoints', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message || 'Waypoints uploaded successfully');
+        loadParkingLots();
+        cancelUpload();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to upload waypoints');
+    });
+}
+
+function cancelUpload() {
+    currentFile = null;
+    document.getElementById('upload-modal').style.display = 'none';
+    document.getElementById('waypoint-file').value = '';
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    showSection('rover-operations');
+});
+
+// Close modals when clicking outside
+window.onclick = function(event) {
+    const telemetryModal = document.getElementById('telemetry-modal');
+    const uploadModal = document.getElementById('upload-modal');
+    
+    if (event.target === telemetryModal) {
+        closeTelemetry();
+    }
+    if (event.target === uploadModal) {
+        cancelUpload();
+    }
+}
+</script>
+
+{% endblock %}

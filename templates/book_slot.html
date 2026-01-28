@@ -1,0 +1,224 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book a Parking Slot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .form-container {
+            background: white;
+            padding: 40px 50px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .form-container h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+        button {
+            background: #10b981;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #059669;
+        }
+    </style>
+</head>
+<body>
+    <form class="form-container" action="/book_slot" method="post">
+        <h2>Book a Parking Slot</h2>
+        <input type="text" name="name" placeholder="Full Name" required>
+        <input type="text" name="phone" placeholder="Phone Number" required>
+        <input type="text" name="plate" placeholder="License Plate" required>
+        <button type="submit">Book Slot</button>
+    </form>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Parking Portal</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #0f0f0f;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      display: flex;
+      background-color: #1f1f1f;
+      color: white;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 0 20px rgba(0,0,0,0.3);
+      width: 900px;
+      height: 500px;
+    }
+    .left, .right {
+      flex: 1;
+      padding: 40px;
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      background-color: #111;
+    }
+    .active {
+      display: flex !important;
+    }
+    h2 {
+      margin-bottom: 20px;
+    }
+    input {
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 6px;
+      border: none;
+      background: #2a2a2a;
+      color: white;
+    }
+    button {
+      padding: 12px;
+      background-color: #10b981;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #059669;
+    }
+    .switch-buttons {
+      position: absolute;
+      top: 30px;
+      display: flex;
+      gap: 1rem;
+    }
+    .toast {
+      background: #dc2626;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      color: white;
+      text-align: center;
+    }
+    #exitQRContainer img {
+      width: 200px;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="left active" id="bookingSection">
+    <h2>Book a Parking Slot</h2>
+    <form id="bookingForm">
+      <input type="text" name="name" placeholder="Full Name" required>
+      <input type="text" name="phone" placeholder="Phone Number" required>
+      <input type="text" name="plate" placeholder="License Plate" required>
+      <button type="submit">Book Slot</button>
+    </form>
+    <div id="bookingToast" class="toast" style="display:none;"></div>
+  </div>
+
+  <div class="right" id="exitQRSection">
+    <h2>Get Exit QR</h2>
+    <input type="text" id="exit_plate" placeholder="License Plate" required>
+    <input type="password" id="exit_phone" placeholder="Phone Number" required>
+    <button onclick="fetchExitQR()">Fetch QR</button>
+    <div id="exitQRContainer"></div>
+    <div id="exitQRToast" class="toast" style="display:none;"></div>
+  </div>
+</div>
+
+<div class="switch-buttons">
+  <button onclick="switchSection('booking')">Book Slot</button>
+  <button onclick="switchSection('exitqr')">Get Exit QR</button>
+</div>
+
+<script>
+function switchSection(section) {
+  document.getElementById('bookingSection').classList.remove('active');
+  document.getElementById('exitQRSection').classList.remove('active');
+  if (section === 'booking') {
+    document.getElementById('bookingSection').classList.add('active');
+  } else {
+    document.getElementById('exitQRSection').classList.add('active');
+  }
+}
+
+// Handle Booking Form Submit
+const bookingForm = document.getElementById('bookingForm');
+bookingForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const formData = new FormData(bookingForm);
+  fetch('/book_slot', {
+    method: 'POST',
+    body: formData
+  })
+  .then(res => res.json())
+  .then(data => {
+    const toast = document.getElementById("bookingToast");
+    toast.style.display = "block";
+    toast.textContent = data.success ? "✅ Booking confirmed!" : data.message || "❌ Booking failed.";
+    if (data.success) bookingForm.reset();
+  })
+  .catch(() => {
+    const toast = document.getElementById("bookingToast");
+    toast.style.display = "block";
+    toast.textContent = "❌ Booking error. Try again.";
+  });
+});
+
+function fetchExitQR() {
+  const plate = document.getElementById("exit_plate").value.toUpperCase().trim();
+  const phone = document.getElementById("exit_phone").value.trim();
+  const qrContainer = document.getElementById("exitQRContainer");
+  const toast = document.getElementById("exitQRToast");
+
+  fetch(`/api/get_exit_qr?plate=${plate}&phone=${phone}`)
+    .then(res => {
+      if (!res.ok) throw new Error("Invalid");
+      return res.json();
+    })
+    .then(data => {
+      if (data.qr_url) {
+        qrContainer.innerHTML = `<img src="${data.qr_url}" alt="Exit QR"><p>Exit QR for ${plate}</p>`;
+        toast.style.display = "none";
+      } else {
+        throw new Error("Invalid");
+      }
+    })
+    .catch(() => {
+      toast.style.display = "block";
+      toast.textContent = "❌ Invalid plate or phone, or not currently parked.";
+      qrContainer.innerHTML = "";
+    });
+}
+</script>
+</body>
+</html>

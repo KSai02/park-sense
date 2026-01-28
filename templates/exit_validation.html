@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Parking Exit Validation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .validation-container {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .details {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            text-align: left;
+        }
+        .detail-row {
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        .duration {
+            font-size: 24px;
+            color: #4CAF50;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="validation-container">
+        <h2>Parking Exit Validation</h2>
+        
+        <div class="details">
+            <div class="detail-row">
+                <span class="label">Name:</span>
+                <span>{{ record.name }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">License Plate:</span>
+                <span>{{ record.plate_number }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Parking Slot:</span>
+                <span>{{ record.slot }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Entry Time:</span>
+                <span>{{ record.entry_time }}</span>
+            </div>
+            
+            <div class="duration">
+                <h3>Parking Duration</h3>
+                <p>{{ duration.days }} days, {{ duration.seconds // 3600 }} hours, {{ (duration.seconds % 3600) // 60 }} minutes</p>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Exit Instructions:</h3>
+            <ol>
+                <li>Please show this screen to the parking attendant</li>
+                <li>Ensure all details are correct</li>
+                <li>Pay any applicable parking fees</li>
+                <li>Drive safely!</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html> 

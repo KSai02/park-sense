@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Detection Result - Park Sense</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .result-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        .qr-code {
+            margin: 20px 0;
+            position: relative;
+        }
+        .qr-code img {
+            max-width: 300px;
+            height: auto;
+        }
+        .expiry-timer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .details {
+            margin: 20px 0;
+            text-align: left;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .detail-row {
+            margin: 10px 0;
+        }
+        .label {
+            font-weight: bold;
+            display: inline-block;
+            width: 150px;
+        }
+        .instructions {
+            margin: 20px 0;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        .countdown {
+            font-size: 24px;
+            color: #dc3545;
+            margin: 20px 0;
+        }
+        .expired {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .expired-message {
+            color: #dc3545;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="result-container">
+        <h2>Vehicle Detected</h2>
+        
+        <div class="details">
+            <div class="detail-row">
+                <span class="label">License Plate:</span>
+                <span>{{ plate_number }}</span>
+            </div>
+            <div class="detail-row">
+                <span class="label">Confidence:</span>
+                <span>{{ "%.2f"|format(confidence * 100) }}%</span>
+            </div>
+        </div>
+
+        {% if qr_path %}
+        <div class="qr-code" id="qrContainer">
+            <div class="expiry-timer" id="expiryTimer">QR Valid: 5:00</div>
+            <h3>Scan QR Code to Register</h3>
+            <img src="{{ qr_path }}" alt="Registration QR Code" id="qrImage">
+            <div class="instructions">
+                <p>1. Open your phone's camera</p>
+                <p>2. Point it at the QR code above</p>
+                <p>3. Click the link that appears</p>
+                <p>4. Fill in your details on the registration page</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="error">
+            <p>Error generating QR code. Please try again.</p>
+        </div>
+        {% endif %}
+
+        <div class="countdown" id="countdown"></div>
+    </div>
+
+    <script>
+        // QR Code expiration timer (5 minutes)
+        let expiryTime = 5 * 60; // 5 minutes in seconds
+        const expiryTimer = document.getElementById('expiryTimer');
+        const qrContainer = document.getElementById('qrContainer');
+        const qrImage = document.getElementById('qrImage');
+
+        const expiryInterval = setInterval(() => {
+            expiryTime--;
+            const minutes = Math.floor(expiryTime / 60);
+            const seconds = expiryTime % 60;
+            expiryTimer.textContent = `QR Valid: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            if (expiryTime <= 0) {
+    clearInterval(expiryInterval);
+    qrContainer.classList.add('expired');
+    qrContainer.innerHTML += '<div class="expired-message">QR Code has expired. Please wait for next detection.</div>';
+
+    // Clear the plate from server before redirecting
+    const plate = "{{ plate }}";
+    fetch(`/clear_plate/${plate}`)
+      .then(() => {
+          setTimeout(() => {
+              window.location.href = '/';
+          }, 2000); // wait 2 seconds after clearing
+      });
+}
+
+        }, 1000);
+
+        // Start countdown after 10 seconds
+        // setTimeout(() => {
+        //     let count = 10;
+        //     const countdownElement = document.getElementById('countdown');
+            
+        //     const countdown = setInterval(() => {
+        //         countdownElement.textContent = `Resuming detection in ${count} seconds...`;
+        //         count--;
+                
+        //         if (count < 0) {
+        //             clearInterval(countdown);
+        //             window.location.href = '/';  // Redirect to home page to resume detection
+        //         }
+        //     }, 1000);
+        // }, 10000);  // Start countdown after 10 seconds
+
+        // Check if registration is completed
+        function checkRegistrationStatus() {
+            fetch('/check_registration_status/{{ registration_id }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'completed') {
+                        // Registration completed, redirect to home
+                        window.location.href = '/';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+        setInterval(function() {
+        fetch('/predictions').then(res => res.json()).then(data => {
+            // If on detection_result.html but plate is no longer ready, go back to live feed
+            if (!data.plate_ready_for_verification) {
+                window.location.href = '/';
+            }
+        });
+    }, 1000);
+
+        // Check registration status every 5 seconds
+        setInterval(checkRegistrationStatus, 3000);
+    </script>
+</body>
+</html> 

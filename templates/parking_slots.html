@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}Parking Slots - Park Sense{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('admin') }}">Dashboard</a>
+<a href="{{ url_for('reports') }}">Reports</a>
+<a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Parking Slots Overview</h2>
+    
+    <div class="legend">
+        <div class="legend-item">
+            <div class="color-box available"></div>
+            <span>Available</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box occupied"></div>
+            <span>Occupied</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box reserved"></div>
+            <span>Reserved</span>
+        </div>
+    </div>
+
+    <div class="parking-grid" id="parking-grid">
+        <!-- Slots will be loaded here -->
+    </div>
+</div>
+
+<script>
+    async function loadParkingSlots() {
+        try {
+            const response = await fetch('/admin/parking-slots-data');
+            const slots = await response.json();
+            displayParkingSlots(slots);
+        } catch (error) {
+            console.error('Error loading parking slots:', error);
+        }
+    }
+
+    function displayParkingSlots(slots) {
+        const grid = document.getElementById('parking-grid');
+        grid.innerHTML = slots.map(slot => {
+            // Map database status to CSS class
+            let statusClass = 'available';
+            if (slot.status === 'occupied') {
+                statusClass = 'occupied';
+            } else if (slot.status === 'reserved') {
+                statusClass = 'reserved';
+            } else if (slot.status === 'empty') {
+                statusClass = 'available';
+            }
+
+            return `
+                <div class="parking-slot ${statusClass}" 
+                     data-slot-id="${slot.space_id}"
+                     title="Click for details">
+                    <div class="slot-number">${slot.space_id}</div>
+                    <div class="slot-details">
+                        <h3>Slot ${slot.space_id}</h3>
+                        <p>Status: ${slot.status}</p>
+                        ${slot.current_vehicle ? `<p>Vehicle: ${slot.current_vehicle}</p>` : ''}
+                        ${slot.last_updated ? `<p>Last Updated: ${new Date(slot.last_updated).toLocaleString()}</p>` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add click event listeners for tooltips
+        document.querySelectorAll('.parking-slot').forEach(slot => {
+            slot.addEventListener('click', () => {
+                const details = slot.querySelector('.slot-details');
+                details.style.display = details.style.display === 'block' ? 'none' : 'block';
+            });
+        });
+    }
+
+    // Load slots on page load
+    loadParkingSlots();
+    
+    // Refresh every 30 seconds
+    setInterval(loadParkingSlots, 30000);
+</script>
+
+<style>
+    .legend {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #706e6e;
+        border-radius: 8px;
+    }
+    span{
+        color: black;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .color-box {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+    }
+
+    .color-box.available {
+        background-color: #4caf50;
+    }
+
+    .color-box.occupied {
+        background-color: #f44336;
+    }
+
+    .color-box.reserved {
+        background-color: #ff9800;
+    }
+
+    .parking-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+
+    .parking-slot {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s;
+        color: white;
+        font-weight: bold;
+    }
+
+    .parking-slot:hover {
+        transform: scale(1.05);
+    }
+
+    .parking-slot.available {
+        background-color: #4caf50;
+    }
+
+    .parking-slot.occupied {
+        background-color: #f44336;
+    }
+
+    .parking-slot.reserved {
+        background-color: #ff9800;
+    }
+
+    .slot-number {
+        font-size: 1.5rem;
+    }
+
+    .slot-details {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        z-index: 1000;
+        min-width: 200px;
+        color: #333;
+    }
+
+    .slot-details h3 {
+        margin: 0 0 0.5rem 0;
+        color: var(--primary-color);
+    }
+
+    .slot-details p {
+        margin: 0.25rem 0;
+        font-size: 0.9rem;
+    }
+
+    .slot-details::before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        border-left: 8px solid transparent;
+        border-right: 8px solid transparent;
+        border-bottom: 8px solid white;
+    }
+</style>
+{% endblock %} 

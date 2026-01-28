@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Fast Lane Entry</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            text-align: center;
+            padding-top: 80px;
+        }
+        .card {
+            background-color: white;
+            display: inline-block;
+            padding: 40px 60px;
+            border-radius: 20px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+        }
+        .card h2 {
+            color: #10b981;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .card h4 {
+            margin: 10px 0;
+            font-size: 20px;
+        }
+        .card .info {
+            font-size: 18px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Welcome Back!</h2>
+        <h4>Plate Number:</h4>
+        <div class="info">{{ plate_number }}</div>
+        
+        <h4>Your Slot:</h4>
+        <div class="info">Lot {{ lot_id }}, Slot {{ slot_number }}</div>
+        
+        <p class="info">Please proceed directly to your reserved parking slot.</p><br>
+        <p class="info">Download Your EXIT QR Via Website.</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QR Scanner</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    #scanner-container {
+      width: 300px;
+      height: 220px;
+      border: 1px solid white;
+      box-shadow: 0 1px 20px white;
+    }
+
+    #qr-reader {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+    <h2 style="text-align: center; color:white">EXIT Scanner</h2>
+  <div id="scanner-container">
+    <div id="qr-reader"></div>
+  </div>
+  </div>
+
+  <!-- ✅ Load QR Code Scanner library first -->
+  <script src="https://unpkg.com/html5-qrcode@2.2.1/html5-qrcode.min.js"></script>
+<script
+  <!-- ✅ Load this AFTER the library -->
+  document.addEventListener("DOMContentLoaded", function () {
+    if (typeof Html5Qrcode === 'undefined') {
+      alert("Html5Qrcode library not loaded.");
+      return;
+    }
+  
+    const qrScanner = new Html5Qrcode("qr-reader");
+  
+    qrScanner.start(
+      { facingMode: "user" },
+      { fps: 10, qrbox: 250 },
+      decodedText => {
+        console.log("QR Code detected:", decodedText);
+        window.location.href = decodedText;
+      },
+      errorMessage => {
+        // Optional: log scan errors or ignore
+        console.log("Scan error:", errorMessage);
+      }
+    ).catch(err => {
+      console.error("Failed to start scanner:", err);
+      alert("Camera start error: " + err.message);
+    });
+  });
+</script>  
+
+</body>
+</html>

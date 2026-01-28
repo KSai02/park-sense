@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Get Exit QR</title>
+    <style>
+        body { text-align: center; padding-top: 80px; font-family: Arial; }
+        input { padding: 10px; margin: 10px; width: 250px; }
+        button { padding: 10px 20px; background: #10b981; color: white; border: none; }
+    </style>
+</head>
+<body>
+    <h2>Retrieve Exit QR</h2>
+    <form method="POST" action="/get_exit_qr">
+        <input type="text" name="plate" placeholder="License Plate" required><br>
+        <input type="password" name="phone" placeholder="Phone Number" required><br>
+        <button type="submit">Get Exit QR</button>
+    </form>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <p style="color: red;">{{ messages[0] }}</p>
+        {% endif %}
+    {% endwith %}
+</body>
+</html>

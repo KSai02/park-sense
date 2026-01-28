@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Records{% endblock %}
+{% block nav_links %}
+<a href="{{ url_for('admin') }}">Dashboard</a>
+<a href="{{ url_for('reports') }}">Reports</a>
+<a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+{% block extra_css %}
+<style>
+    .table-container {
+    
+    background: #232526;
+    padding: 20px;
+    padding-top: 0px;
+    margin:0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+th {
+    background-color: #373f43;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    margin:0;
+}
+th:hover {
+    background-color: #18191a;
+}
+tr:hover {
+    background-color: #232526;
+}
+    </style>
+{% endblock %}
+{% block content %}
+
+<div class="vehicle-container">
+  <h2 class="text-center text-2xl font-bold mb-4">Live Slot Status by Lot</h2>
+  
+  <div class="flex flex-wrap justify-center gap-4 mb-6" id="lotButtons">
+    <!-- Buttons will be loaded dynamically -->
+  </div>
+
+  <div class="table-container" style="max-width: 1200px; align-items: center;margin: 0 auto;">
+      <table id="vehicleTable" class="w-full text-sm text-center border border-blue-400" style="border-radius: 10px;">
+          <thead class="bg-blue-800 text-white" style="height:40px;border-radius: 10px;">
+              <tr>
+                  <th onclick="sortTable(0)">Lot ID </th>
+                  <th onclick="sortTable(1)">Slot No </th>
+                  <th onclick="sortTable(2)">Status </th>
+                  <th onclick="sortTable(3)">Vehicle No </th>
+                  <th onclick="sortTable(4)">Name </th>
+                  <th onclick="sortTable(5)">Phone No</th>
+                  <th onclick="sortTable(6)">Entry Time</th>
+                  <th onclick="sortTable(7)">Last Updated</th>
+              </tr>
+          </thead>
+          <tbody>
+              <!-- Data here -->
+          </tbody>
+      </table>
+  </div>
+</div>
+{% endblock %}
+<style>
+.vehicle-container {
+    padding: 32px 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.table-container {
+    
+    background: #232526;
+    padding: 20px;
+    padding-top: 0px;
+    margin:0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+th {
+    background-color: #373f43;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    margin:0;
+}
+th:hover {
+    background-color: #18191a;
+}
+tr:hover {
+    background-color: #232526;
+}
+</style>
+{% block extra_js %}
+<script>
+    async function fetchLots() {
+        const res = await fetch('/vehicle/get-lots');
+        const data = await res.json();
+        if (data.status === 'success') {
+            const lotButtons = document.getElementById('lotButtons');
+            data.lots.forEach(lot => {
+                const button = document.createElement('button');
+                button.textContent = `Lot ${lot}`;
+                button.className = "bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-800";
+                button.onclick = () => fetchVehicles(lot);
+                lotButtons.appendChild(button);
+            });
+        }
+    }
+
+    async function fetchVehicles(lotId) {
+        const res = await fetch(`/vehicles-records/${lotId}`);
+        const data = await res.json();
+        const tbody = document.querySelector('#vehicleTable tbody');
+        tbody.innerHTML = '';
+        if (data.status === 'success') {
+            data.records.forEach(record => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${record.lot}</td>
+                    <td>${record.slot}</td>
+                    <td>${record.status}</td>
+                    <td>${record.plate_number || '-'}</td>
+                    <td>${record.name || '-'}</td>
+                    <td>${record.phone || '-'}</td>
+                    <td>${record.entry_time ? new Date(record.entry_time).toLocaleString() : '-'}</td>
+                    <td>${record.last_updated ? new Date(record.last_updated).toLocaleString() : '-'}</td>
+                `;
+                tr.className = getStatusClass(record.status);
+                tbody.appendChild(tr);
+            });
+        }
+    }
+
+    function getStatusClass(status) {
+        if (status === 'occupied') return 'bg-red-100';
+        if (status === 'reserved') return 'bg-yellow-100';
+        if (status === 'empty') return 'bg-green-100';
+        return '';
+    }
+
+    function sortTable(n) {
+        const table = document.getElementById("vehicleTable");
+        let switching = true, dir = "asc", switchcount = 0;
+        while (switching) {
+            switching = false;
+            const rows = table.rows;
+            for (let i = 1; i < rows.length - 1; i++) {
+                let shouldSwitch = false;
+                const x = rows[i].getElementsByTagName("TD")[n];
+                const y = rows[i + 1].getElementsByTagName("TD")[n];
+                if ((dir === "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) ||
+                    (dir === "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase())) {
+                    shouldSwitch = true;
+                    break;
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;
+            } else {
+                if (switchcount === 0 && dir === "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchLots);
+</script>
+{% endblock %}

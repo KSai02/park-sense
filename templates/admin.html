@@ -1,0 +1,597 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Park Sense{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('admin') }}">Dashboard</a>
+<a href="{{ url_for('reports') }}">Reports</a>
+<a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="container" style="padding:0 40px;">
+<div class="grid grid-2">
+    <div class="card report-card">
+        <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Parking Statistics</h2>
+        <div id="parking-stats" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Total Slots</h3>
+                <p style="font-size: 2rem; color: var(--light-text);" id="total-slots">-</p>
+            </div>
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Occupied</h3>
+                <p style="font-size: 2rem; color: var(--light-text);" id="occupied-slots">-</p>
+            </div>
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Reserved</h3>
+                <p style="font-size: 2rem; color: var(--light-text);" id="reserved-slots">-</p>
+            </div>
+            <div style="text-align: center;">
+                <h3 style="color: var(--gray-text); font-size: 1rem;">Available</h3>
+                <p style="font-size: 2rem; color: var(--light-text);" id="available-slots">-</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Quick Actions</h2>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <button class="btn" onclick="window.location.href='{{ url_for('reports') }}'">View Reports</button>
+            <!-- <button class="btn btn-secondary" onclick="exportReport()">Export Report</button> -->
+            <button class="btn btn-secondary" onclick="window.location.href='/vehicle'">Vehicles</button>
+        </div>
+    </div>
+</div>
+
+
+<div class="card" style="margin-top: 2rem;">
+    <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Parking Lots</h2>
+    <div id="lot-buttons-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem;">
+        <!-- Lot buttons will be populated here -->
+    </div>
+
+    <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Parking Slots</h2>
+    <div id="parking-slots" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; padding: 1rem;" >
+        <!-- Parking slots will be dynamically populated here -->
+    </div>
+</div>
+
+
+<div class="card" style="margin-top: 2rem;">
+    <h2 style="color: var(--primary-color); margin-bottom: 1rem;">Parking Violations</h2>
+    <div id="parking-violations" style="min-height: 200px;">
+        <div class="loading">Checking parking violations...</div>
+    </div>
+</div>
+</div>
+<!-- <div id="vehicleModal" class="modal hidden fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50">
+    <div class="bg-[#1e1e1e] text-white rounded-xl w-[90%] max-w-xl p-6 relative">
+      <button onclick="closeModal()" class="absolute top-2 right-4 text-xl text-white">&times;</button>
+      <h2 class="text-2xl font-bold mb-1">Vehicle Details</h2>
+      <p class="text-sm text-gray-400 mb-4">Detailed information about the selected vehicle.</p>
+      <div id="vehicleImage" class="w-full flex justify-center mb-4">
+        <img src="" id="vehiclePhoto" class="rounded-lg max-h-48 object-contain" alt="Vehicle Photo">
+      </div>
+      <div class="text-center text-xl font-semibold bg-[#333] rounded-lg py-2 mb-4" id="vehiclePlate"></div>
+      <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+        <div><strong>Parking Slot</strong><br><span id="vehicleSlot"></span></div>
+        <div><strong>Entry Time</strong><br><span id="vehicleEntryTime"></span></div>
+        <div><strong>Duration</strong><br><span id="vehicleDuration"></span></div>
+        <div><strong>Status</strong><br><span id="vehicleStatus" class="px-2 py-1 bg-gray-600 rounded text-white text-xs inline-block"></span></div>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-2">Driver Information</h3>
+        <div class="flex items-center gap-2 bg-[#2a2a2a] p-2 rounded">
+          <span class="material-icons">person</span>
+          <span id="vehiclePhone" class="text-sm"></span>
+        </div>
+      </div>
+    </div>
+  </div> -->
+  
+<!-- <script>
+    // Fetch and update parking statistics
+    async function updateParkingStats() {
+        try {
+            const response = await fetch('/admin/parking-stats');
+            const data = await response.json();
+            
+            document.getElementById('total-slots').textContent = data.total_slots;
+            document.getElementById('occupied-slots').textContent = data.occupied_slots;
+            document.getElementById('reserved-slots').textContent = data.reserved_slots;
+            document.getElementById('available-slots').textContent = data.available_slots;
+        } catch (error) {
+            console.error('Error fetching parking stats:', error);
+        }
+    }
+
+    // Fetch and update parking slots
+    async function updateParkingSlots() {
+        try {
+            // Fetch lot IDs from /operator/get-lots
+            const lotsResponse = await fetch('/operator/get-lots');
+            const lotsData = await lotsResponse.json();
+            if (lotsData.status !== 'success' || !Array.isArray(lotsData.lots)) {
+                console.error('Failed to fetch lot IDs.');
+                return;
+            }
+            const lotIds = lotsData.lots;
+
+            // Fetch all slots
+            const response = await fetch('/admin/parking-slots-data');
+            const slots = await response.json();
+            const slotsContainer = document.getElementById('parking-slots');
+
+            // Filter slots to only those whose lot_id is in lotIds
+            const filteredSlots = slots.filter(slot => lotIds.includes(slot.lot_id));
+
+            slotsContainer.innerHTML = filteredSlots.map(slot => `
+                <div class="slot-card ${slot.status}">
+                    <h3>Slot ${slot.space_id}</h3>
+                    <h3>Lot: ${slot.lot_id}</h3>
+                    <p>Status: ${slot.status}</p>
+                    ${slot.current_vehicle ? `<p>Vehicle: ${slot.current_vehicle}</p>` : ''}
+                    <p>Last Updated: ${new Date(slot.last_updated).toLocaleString()}</p>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Error fetching parking slots:', error);
+        }
+    }
+
+
+    let allSlots = [];  // Store all slots globally
+let selectedLot = null;  // Track currently selected lot
+
+async function updateParkingUI() {
+    try {
+        // Fetch lots
+        const lotsResponse = await fetch('/operator/get-lots');
+        const lotsData = await lotsResponse.json();
+        if (lotsData.status !== 'success' || !Array.isArray(lotsData.lots)) {
+            console.error('Failed to fetch lot IDs.');
+            return;
+        }
+
+        const lotIds = lotsData.lots;
+        const lotButtonsContainer = document.getElementById('lot-buttons-container');
+        lotButtonsContainer.innerHTML = '';
+
+        lotIds.forEach((lotId, index) => {
+            const button = document.createElement('button');
+            button.className = 'lot-btn' + (index === 0 ? ' active' : '');
+            button.id = `lot-${lotId}`;
+            button.innerText = lotId;
+            button.onclick = () => {
+                selectLot(lotId);
+            };
+            lotButtonsContainer.appendChild(button);
+
+            // Select the first lot by default
+            if (index === 0) {
+                selectedLot = lotId;
+            }
+        });
+
+        // Fetch slots only once
+        const slotsResponse = await fetch('/admin/parking-slots-data');
+        allSlots = await slotsResponse.json();
+
+        // Show slots for the initially selected lot
+        showSlotsForLot(selectedLot);
+
+    } catch (err) {
+        console.error('Error updating parking UI:', err);
+    }
+}
+
+function selectLot(lotId) {
+    selectedLot = lotId;
+
+    // Highlight the active lot button
+    document.querySelectorAll('.lot-btn').forEach(btn => btn.classList.remove('active'));
+    document.getElementById(`lot-${lotId}`).classList.add('active');
+
+    showSlotsForLot(lotId);
+}
+
+function showSlotsForLot(lotId) {
+    const slotsContainer = document.getElementById('parking-slots');
+    const filteredSlots = allSlots.filter(slot => slot.lot_id === lotId);
+
+    slotsContainer.innerHTML = filteredSlots.map(slot => `
+        <div class="slot-card ${slot.status}">
+            <h3>Slot ${slot.space_id}</h3>
+            <h3>Lot: ${slot.lot_id}</h3>
+            <p>Status: ${slot.status}</p>
+            ${slot.current_vehicle ? `<p>Vehicle: ${slot.current_vehicle}</p>` : ''}
+            <p>Last Updated: ${new Date(slot.last_updated).toLocaleString()}</p>
+        </div>
+    `).join('');
+}
+
+// Call on page load
+document.addEventListener('DOMContentLoaded', updateParkingUI);
+    // Check for parking violations
+    async function checkParkingViolations() {
+        try {
+            const response = await fetch('/admin/check-violations');
+            const data = await response.json();
+            const violationsDiv = document.getElementById('parking-violations');
+            
+            if (data.violations && data.violations.length > 0) {
+                let html = '<div class="violations-list">';
+                data.violations.forEach(violation => {
+                    html += `
+                        <div class="violation-item">
+                            <h3>License Plate: ${violation.license_plate}</h3>
+                            <p>Assigned Slot: ${violation.assigned_slot}</p>
+                            <p>Current Slot: ${violation.current_slot}</p>
+                            <p>Time Detected: ${new Date(violation.detected_at).toLocaleString()}</p>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                violationsDiv.innerHTML = html;
+            } else {
+                violationsDiv.innerHTML = '<div class="success-message">All vehicles are properly parked!</div>';
+            }
+        } catch (error) {
+            console.error('Error checking violations:', error);
+            document.getElementById('parking-violations').innerHTML = 
+                '<div class="error-message">Error checking parking violations</div>';
+        }
+    }
+
+    // Export report
+    async function exportReport() {
+        try {
+            const response = await fetch('/admin/export-report');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'parking_report.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error exporting report:', error);
+        }
+    }
+
+    // Update stats, slots, and violations on page load
+    updateParkingStats();
+    updateParkingSlots();
+    checkParkingViolations();
+    
+    // Update every 30 seconds
+    setInterval(() => {
+        updateParkingStats();
+        updateParkingSlots();
+        checkParkingViolations();
+    }, 30000);
+</script> -->
+
+<script>
+// VANTA.NET({
+//   el: "#vanta",
+//   mouseControls: true,
+//   touchControls: true,
+//   gyroControls: false,
+//   minHeight: 200.00,
+//   minWidth: 200.00,
+//   scale: 1.00,
+//   scaleMobile: 1.00,
+//   color: 0xbb265a,
+//   backgroundColor: 0xb0518
+// })
+
+    let allSlots = [];
+    let selectedLot = null;
+    
+
+    async function updateParkingStats() {
+        try {
+            const response = await fetch('/admin/parking-stats');
+            const data = await response.json();
+            console.log(data);
+            document.getElementById('total-slots').textContent = data.total_slots;
+            document.getElementById('occupied-slots').textContent = data.occupied_slots;
+            document.getElementById('reserved-slots').textContent = data.reserved_slots;
+            document.getElementById('available-slots').textContent = data.available_slots;
+        } catch (error) {
+            console.error('Error fetching parking stats:', error);
+        }
+    }
+
+    async function updateParkingUI() {
+        try {
+            // Fetch lots
+            const lotsResponse = await fetch('/admin/get-lots');
+            const lotsData = await lotsResponse.json();
+            if (lotsData.status !== 'success' || !Array.isArray(lotsData.lots)) {
+                console.error('Failed to fetch lot IDs.');
+                return;
+            }
+
+            const lotIds = lotsData.lots;
+            const lotButtonsContainer = document.getElementById('lot-buttons-container');
+            lotButtonsContainer.innerHTML = '';
+
+            lotIds.forEach((lotId, index) => {
+                const button = document.createElement('button');
+                button.className = 'lot-btn';
+                button.id = `lot-${lotId}`;
+                button.innerText = lotId;
+                button.onclick = () => selectLot(lotId);
+                lotButtonsContainer.appendChild(button);
+
+                // Select first lot if no selection exists
+                if (index === 0 && !selectedLot) {
+                    selectedLot = lotId;
+                }
+            });
+
+            // Highlight selected lot
+            document.querySelectorAll('.lot-btn').forEach(btn => btn.classList.remove('active'));
+            const selectedBtn = document.getElementById(`lot-${selectedLot}`);
+            if (selectedBtn) selectedBtn.classList.add('active');
+
+            // Fetch all slots once
+            const slotsResponse = await fetch('/admin/parking-slots-data');
+            allSlots = await slotsResponse.json();
+
+            // Show slots for selected lot
+            showSlotsForLot(selectedLot);
+
+        } catch (error) {
+            console.error('Error updating parking UI:', error);
+        }
+    }
+
+    function selectLot(lotId) {
+        selectedLot = lotId;
+
+        document.querySelectorAll('.lot-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById(`lot-${lotId}`);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        showSlotsForLot(lotId);
+    }
+
+    function showSlotsForLot(lotId) {
+        const slotsContainer = document.getElementById('parking-slots');
+        const filteredSlots = allSlots.filter(slot => slot.lot_id === lotId);
+
+        slotsContainer.innerHTML = filteredSlots.map(slot => `
+            <div class="slot-card ${slot.status}" onclick="showVehicleDetails('${slot.space_id}')">
+                <h3>Slot ${slot.space_id}</h3>
+                <h3>Lot: ${slot.lot_id}</h3>
+                <p>Status: ${slot.status}</p>
+                ${slot.current_vehicle ? `<p>Vehicle: ${slot.current_vehicle}</p>` : ''}
+                <p>Last Updated: ${new Date(slot.last_updated).toLocaleString()}</p>
+            </div>
+        `).join('');
+    }
+
+    async function checkParkingViolations() {
+        try {
+            const response = await fetch('/admin/check-violations');
+            const data = await response.json();
+            const violationsDiv = document.getElementById('parking-violations');
+            
+            if (data.violations && data.violations.length > 0) {
+                let html = '<div class="violations-list">';
+                data.violations.forEach(v => {
+                    html += `
+                        <div class="violation-item">
+                            <h3>License Plate: ${v.license_plate}</h3>
+                            <p>Assigned Slot: ${v.assigned_slot}</p>
+                            <p>Current Slot: ${v.current_slot}</p>
+                            <p>Time Detected: ${new Date(v.detected_at).toLocaleString()}</p>
+                        </div>`;
+                });
+                html += '</div>';
+                violationsDiv.innerHTML = html;
+            } else {
+                violationsDiv.innerHTML = '<div class="success-message">All vehicles are properly parked!</div>';
+            }
+        } catch (error) {
+            console.error('Error checking violations:', error);
+            document.getElementById('parking-violations').innerHTML = 
+                '<div class="error-message">Error checking parking violations</div>';
+        }
+    }
+    
+//new
+
+//     async function showVehicleDetails(slotId) {
+//     try {
+//         const res = await fetch(`/admin/vehicle-details/${selectedBtn}/${slotId}`);
+//         const data = await res.json();
+//         if (data.status !== 'success') throw new Error('No data');
+
+//         const v = data.vehicle;
+
+//         document.getElementById('vehiclePhoto').src = v.image || 'default.jpg';
+//         document.getElementById('vehiclePlate').textContent = v.plate_number || 'Unknown';
+//         document.getElementById('vehicleSlot').textContent = v.slot || 'N/A';
+//         document.getElementById('vehicleEntryTime').textContent = timeAgo(v.entry_time);
+//         document.getElementById('vehicleDuration').textContent = calculateDuration(v.entry_time);
+//         document.getElementById('vehicleStatus').textContent = v.status || 'Unknown';
+//         document.getElementById('vehiclePhone').textContent = v.phone || 'N/A';
+
+//         document.getElementById('vehicleModal').classList.remove('hidden');
+//     } catch (e) {
+//         console.error('Error fetching vehicle:', e);
+//         alert('No details available.');
+//     }
+// }
+
+function closeModal() {
+    document.getElementById('vehicleModal').classList.add('hidden');
+}
+
+function timeAgo(dateStr) {
+    const date = new Date(dateStr);
+    const diffMs = Date.now() - date;
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    return days > 0 ? `${days} day${days > 1 ? 's' : ''} ago` : 'Today';
+}
+
+function calculateDuration(entryTime) {
+    const entry = new Date(entryTime);
+    const now = new Date();
+    const diff = now - entry;
+    return Math.floor(diff / (1000 * 60 * 60)) + 'h';
+}
+
+
+
+
+//end
+
+
+    async function exportReport() {
+        try {
+            const response = await fetch('/admin/export-report');
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'parking_report.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error exporting report:', error);
+        }
+    }
+
+    // Run on page load
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOMContentLoaded fired");
+        updateParkingStats();
+        updateParkingUI();
+        checkParkingViolations();
+    });
+
+    // Periodic update
+    setInterval(() => {
+        updateParkingStats();
+        updateParkingUI();  // NOT updateParkingSlots()
+        checkParkingViolations();
+    }, 30000);
+</script>
+
+{% block extra_css %}
+<style>
+    .body{
+    background: #345678;
+    color: #f1f1f1;
+    }
+
+    .slot-card {
+        background: white;
+        border: 1px solid #141414;
+        border-radius: 8px;
+        padding: 1rem;
+        text-align: center;
+        color:#141414;
+        font-weight: bold;
+    }
+
+    .slot-card.occupied {
+        background: #f30202;
+        border-color: #4d4344;
+    }
+
+    .slot-card.reserved {
+        background: #ded742;
+        border-color: #544c3f;
+    }
+
+    .slot-card.empty {
+        background: #18e92a;
+        border-color: #769077;
+    }
+    .card.report-card {
+    background: #232526;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+    .lot-btn {
+        background: grey;
+        color: white;
+        border: none;
+        padding: 1rem;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        min-width: 50px;
+        min-height:30px;
+        transition: all 0.3s ease;
+    }
+    
+    .lot-btn.active {
+        background: skyblue;
+    }
+    
+    .lot-btn:hover {
+        opacity: 0.8;
+    }
+
+    .violations-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .violation-item {
+        background: #fff3f3;
+        border: 1px solid #ffcdd2;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+    
+    .violation-item h3 {
+        color: #d32f2f;
+        margin: 0 0 0.5rem 0;
+    }
+    
+    .violation-item p {
+        margin: 0.25rem 0;
+        color: #666;
+    }
+    
+    .success-message {
+        background: #e8f5e9;
+        border: 1px solid #c8e6c9;
+        border-radius: 8px;
+        padding: 1rem;
+        color: #2e7d32;
+        text-align: center;
+    }
+    
+    .error-message {
+        background: #fff3e0;
+        border: 1px solid #ffe0b2;
+        border-radius: 8px;
+        padding: 1rem;
+        color: #ef6c00;
+        text-align: center;
+    }
+    
+    .loading {
+        text-align: center;
+        color: #666;
+        padding: 1rem;
+    }
+</style>
+{%endblock%}
+{% endblock %}

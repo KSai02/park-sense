@@ -1,0 +1,491 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Park Sense{% endblock %}
+
+{% block nav_links %}
+<a href="{{ url_for('admin') }}">Dashboard</a>
+<a href="{{ url_for('reports') }}">Reports</a>
+<a href="{{ url_for('logout') }}">Logout</a>
+{% endblock %}
+
+{% block content %}
+<div class="reports-container">
+    
+    <!-- Statistics Section -->
+    <div class="card report-card">
+        <h3>Automated Parking System Reports</h3>
+        <p class="subtitle">Summary of parking activity based on selected date range <span id="summary-range"></span>.</p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total Entries</div>
+                <div class="stat-value" id="stat-entries">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Exits</div>
+                <div class="stat-value" id="stat-exits">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Parking Duration</div>
+                <div class="stat-value" id="stat-avg-duration">-</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Peak Parking Hour</div>
+                <div class="stat-value" id="stat-peak-hour">-</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="card report-card">
+        <div class="filters">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search by license plate...">
+                <label for="dateFilter" style="margin-top: 7px;">Filter by Date:</label>
+                <input type="date" id="dateFilter" placeholder="Filter by date">
+            </div>
+            <div>
+                <label style="margin-right:80px">Start Date</label>
+                <label>End Date</label>
+            </div>
+            <div class="date-range">
+                <input type="date" id="startDate" placeholder="Start Date">
+                <input type="date" id="endDate" placeholder="End Date">
+                <button onclick="applyFilters()">Apply Filters</button>
+            </div>
+        </div>
+        <div class="table-container">
+            <table id="parkingRecords">
+                <thead class="sticky z-10 bg-[#1a1a1a]">
+                    <tr>
+                        <th onclick="sortTable(0)">License Plate ↕</th>
+                        <th onclick="sortTable(1)">Name ↕</th>
+                        <th onclick="sortTable(2)">Lot ↕</th>
+                        <th onclick="sortTable(3)">Slot ↕</th>
+                        <th onclick="sortTable(4)">Entry Time ↕</th>
+                        <th onclick="sortTable(5)">Exit Time ↕</th>
+                        <th onclick="sortTable(6)">Status ↕</th>
+                    </tr>
+                </thead>
+                <tbody>
+                     <!-- Records will be populated here -->
+                </tbody>
+            </table>
+        </div> 
+        
+          
+
+    </div>
+
+    <!-- CSV Download Section -->
+        <button class="btn" style="align-items: center;"onclick="downloadCSV()">Download Report</button>
+    
+    
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+let currentRecords = [];
+let sortColumn = 4; // Default sort by entry time
+let sortDirection = 'desc';
+
+function loadParkingRecords() {
+    fetch('/admin/parking-records')
+        .then(response => response.json())
+        .then(records => {
+            currentRecords = records;
+            displayRecords(records);
+            updateStats(records);
+        })
+        .catch(error => console.error('Error loading records:', error));
+}
+
+function displayRecords(records) {
+    const tbody = document.querySelector('#parkingRecords tbody');
+    tbody.innerHTML = '';
+    records.forEach(record => {
+        const row = document.createElement('tr');
+        const entryTime = record.entry_time === '-' ? '-' : new Date(record.entry_time).toLocaleString();
+        const exitTime = record.status === 'exited' && record.exit_time !== '-' ? 
+            new Date(record.exit_time).toLocaleString() : '-';
+        row.innerHTML = `
+            <td>${record.plate_number}</td>
+            <td>${record.name}</td>
+            <td>${record.lot}</td>
+            <td>${record.slot}</td>
+            <td>${entryTime}</td>
+            <td>${exitTime}</td>
+            <td>${record.status}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+const columnMap = [
+    "licensePlate", // column 0
+    "name",         // column 1
+    "lot",          // column 2
+    "slot",         // column 3
+    "entryTime",    // column 4
+    "exitTime",     // column 5
+    "status"        // column 6
+];
+
+function sortTable(column) {
+    if (sortColumn === column) {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        sortColumn = column;
+        sortDirection = 'desc';
+    }
+
+    const key = columnMap[column];
+
+    currentRecords.sort((a, b) => {
+        let valueA = a[key];
+        let valueB = b[key];
+
+        if (key === 'entryTime' || key === 'exitTime') {
+            valueA = valueA === '-' ? new Date(0) : new Date(valueA);
+            valueB = valueB === '-' ? new Date(0) : new Date(valueB);
+        } else {
+            // Normalize strings for case-insensitive comparison
+            valueA = typeof valueA === 'string' ? valueA.toLowerCase() : valueA;
+            valueB = typeof valueB === 'string' ? valueB.toLowerCase() : valueB;
+        }
+
+        if (valueA < valueB) return sortDirection === 'asc' ? -1 : 1;
+        if (valueA > valueB) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+    });
+    displayRecords(currentRecords);
+}
+
+
+
+
+
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const dateFilter = document.getElementById('dateFilter').value;
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    let filteredRecords = currentRecords;
+    if (searchTerm) {
+        filteredRecords = filteredRecords.filter(record => 
+            record.plate_number.toLowerCase().includes(searchTerm) ||
+            record.name.toLowerCase().includes(searchTerm)
+        );
+    }
+    if (dateFilter) {
+        const filterDate = new Date(dateFilter);
+        filteredRecords = filteredRecords.filter(record => {
+            const entryDate = new Date(record.entry_time);
+            return entryDate.toDateString() === filterDate.toDateString();
+        });
+    }
+    if (startDate) {
+        const start = new Date(startDate);
+        filteredRecords = filteredRecords.filter(record => 
+            new Date(record.entry_time) >= start
+        );
+    }
+    if (endDate) {
+        const end = new Date(endDate);
+        filteredRecords = filteredRecords.filter(record => 
+            new Date(record.entry_time) <= end
+        );
+    }
+    displayRecords(filteredRecords);
+    updateStats(filteredRecords);
+}
+
+
+
+
+document.getElementById('searchInput').addEventListener('input', applyFilters);
+document.getElementById('dateFilter').addEventListener('change', applyFilters);
+
+
+// CSV Download
+// function downloadCSV() {
+//     const start = document.getElementById('csvStartDate').value;
+//     const end = document.getElementById('csvEndDate').value;
+//     if (!start || !end) {
+//         alert('Please select both start and end dates.');
+//         return;
+//     }
+//     window.location.href = `/admin/export-report?start=${start}&end=${end}`;
+// }
+function downloadCSV() {
+    const table = document.getElementById("parkingRecords");
+    const rows = table.querySelectorAll("tr");
+    let csvContent = "";
+
+    rows.forEach(row => {
+        const cols = row.querySelectorAll("th, td");
+        const rowData = Array.from(cols).map(cell => `"${cell.innerText.trim()}"`).join(",");
+        csvContent += rowData + "\n";
+    });
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
+    const downloadLink = document.createElement("a");
+    downloadLink.href = url;
+    downloadLink.download = "visible_parking_records.csv";
+    document.body.appendChild(downloadLink);
+    downloadLink.click();
+    document.body.removeChild(downloadLink);
+}
+
+// Stats Calculation
+function updateStats(records) {
+    // Total Entries
+    document.getElementById('stat-entries').textContent = records.length;
+    // Total Exits
+    const exits = records.filter(r => r.status === 'exited');
+    document.getElementById('stat-exits').textContent = exits.length;
+    // Average Parking Duration
+    let totalDuration = 0, count = 0;
+    exits.forEach(r => {
+        if (r.entry_time && r.exit_time && r.exit_time !== '-') {
+            const entry = new Date(r.entry_time);
+            const exit = new Date(r.exit_time);
+            const duration = (exit - entry) / 1000; // seconds
+            totalDuration += duration;
+            count++;
+        }
+    });
+    let avg = '-';
+    if (count > 0) {
+        const avgSec = totalDuration / count;
+        const h = Math.floor(avgSec / 3600);
+        const m = Math.floor((avgSec % 3600) / 60);
+        const s = Math.floor(avgSec % 60);
+        avg = `${h}h ${m}m`;
+    }
+    document.getElementById('stat-avg-duration').textContent = avg;
+    // Peak Parking Hour
+    const hourMap = {};
+    records.forEach(r => {
+        if (r.entry_time && r.entry_time !== '-') {
+            const hour = new Date(r.entry_time).getHours();
+            hourMap[hour] = (hourMap[hour] || 0) + 1;
+        }
+    });
+    let peakHour = '-', peakCount = 0;
+    for (const h in hourMap) {
+        if (hourMap[h] > peakCount) {
+            peakHour = h;
+            peakCount = hourMap[h];
+        }
+    }
+    if (peakHour !== '-') {
+        const nextHour = (parseInt(peakHour) + 1) % 24;
+        document.getElementById('stat-peak-hour').textContent = `${peakHour}:00 - ${nextHour}:00 (${peakCount} entries)`;
+    } else {
+        document.getElementById('stat-peak-hour').textContent = '-';
+    }
+    // Summary range
+    const start = document.getElementById('csvStartDate').value;
+    const end = document.getElementById('csvEndDate').value;
+    if (start && end) {
+        document.getElementById('summary-range').textContent = `(${start} to ${end})`;
+    } else {
+        document.getElementById('summary-range').textContent = '';
+    }
+}
+
+// Initial load
+loadParkingRecords();
+</script>
+
+<style>
+body {
+    background: #18191a;
+    color: #f1f1f1;
+}
+.reports-container {
+    padding: 32px 0;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+.card.report-card {
+    background: #232526;
+    border-radius: 16px;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.15);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+.card.report-card h3 {
+    margin-top: 0;
+    color: #fff;
+}
+.card.report-card .subtitle {
+    color: #b0b3b8;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+.report-row {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-top: 1rem;
+}
+.report-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.download-btn {
+    background: #fff;
+    color: #18191a;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-left: auto;
+    transition: background 0.2s;
+}
+.download-btn:hover {
+    background: #b0b3b8;
+}
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+.stat-card {
+    background: #0e0f10;
+    border-radius: 12px;
+    padding: 2rem 1.5rem;
+    box-shadow: 0 3px 8px rgba(215, 210, 210, 0.1);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 120px;
+}
+.stat-label {
+    color: #e5e7ef;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+.stat-value {
+    color: #fff;
+    font-size: 2.2rem;
+    font-weight: 700;
+}
+.filters {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.search-box {
+    display: flex;
+    gap: 10px;
+}
+.search-box input {
+    padding: 8px 20px;
+    border: 1px solid #95c8d5;
+    border-radius: 4px;
+    width: 300px;
+    background: #232526;
+    color: #fff;
+}
+.date-range {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+.date-range input {
+    padding: 8px;
+    border: 1px solid #b1d5de;
+    border-radius: 4px;
+    background: #232526;
+    color: #e0eaef;
+}
+.date-range button {
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+
+
+
+/* #parkingRecords {
+  width: 100%;
+  border-collapse: collapse;
+} */
+#parkingRecords {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#parkingRecords th,
+#parkingRecords td {
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+#parkingRecords thead th {
+  position: sticky;
+  top: 0;
+  background-color: #1a1a1a;  /* Ensure it's opaque */
+  z-index: 10;
+  border-bottom: 2px solid #444;
+}
+
+
+
+.date-range button:hover {
+    background-color: #0056b3;
+}
+.table-container {
+    max-height: 500px; /* Set your desired height (new)*/
+    overflow-y: auto;/*hel*/
+    background: #1b1e1f;
+    padding: 20px;
+    padding-top: 0px;
+    margin:0;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow-x: auto;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #333;
+}
+th {
+    background-color: #232526;
+    font-weight: 600;
+    color: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    margin:0;
+}
+th:hover {
+    background-color: #18191a;
+}
+tr:hover {
+    background-color: #232526;
+}
+td {
+    color: #f1f1f1;
+}
+</style>
+{% endblock %} 

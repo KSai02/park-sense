@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Park Sense{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="stats-container">
+        <div class="stat-card">
+            <h3>Total Slots</h3>
+            <p id="total-slots">-</p>
+        </div>
+        <div class="stat-card">
+            <h3>Available Slots</h3>
+            <p id="available-slots">-</p>
+        </div>
+        <div class="stat-card">
+            <h3>Occupied Slots</h3>
+            <p id="occupied-slots">-</p>
+        </div>
+        <div class="stat-card">
+            <h3>Reserved Slots</h3>
+            <p id="reserved-slots">-</p>
+        </div>
+        <div class="stat-card">
+            <h3>Active Records</h3>
+            <p id="active-records">-</p>
+        </div>
+    </div>
+
+    <div class="recent-activity">
+        <h2>Recent Parking Activity</h2>
+        <div class="table-container">
+            <table id="recent-records">
+                <thead>
+                    <tr>
+                        <th>License Plate</th>
+                        <th>Name</th>
+                        <th>Lot</th>
+                        <th>Slot</th>
+                        <th>Entry Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Records will be populated here -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateDashboard() {
+    // Update parking stats
+    fetch('/admin/parking-stats')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('total-slots').textContent = data.total_slots;
+            document.getElementById('available-slots').textContent = data.available_slots;
+            document.getElementById('occupied-slots').textContent = data.occupied_slots;
+            document.getElementById('reserved-slots').textContent = data.reserved_slots;
+            document.getElementById('active-records').textContent = data.active_records;
+        })
+        .catch(error => console.error('Error fetching stats:', error));
+
+    // Update recent records
+    fetch('/admin/parking-records')
+        .then(response => response.json())
+        .then(records => {
+            const tbody = document.querySelector('#recent-records tbody');
+            tbody.innerHTML = '';
+            
+            // Sort records by entry time (most recent first)
+            records.sort((a, b) => {
+                const timeA = a.entry_time === '-' ? 0 : new Date(a.entry_time).getTime();
+                const timeB = b.entry_time === '-' ? 0 : new Date(b.entry_time).getTime();
+                return timeB - timeA;
+            });
+            
+            // Display only the 10 most recent records
+            records.slice(0, 10).forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.plate_number}</td>
+                    <td>${record.name}</td>
+                    <td>${record.lot_id}</td>
+                    <td>${record.slot}</td>
+                    <td>${record.entry_time}</td>
+                    <td>${record.status}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        })
+        .catch(error => console.error('Error fetching records:', error));
+}
+
+// Update dashboard every 5 seconds
+updateDashboard();
+setInterval(updateDashboard, 5000);
+</script>
+
+<style>
+.dashboard-container {
+    padding: 20px;
+}
+
+.stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.stat-card h3 {
+    margin: 0;
+    color: #666;
+    font-size: 1rem;
+}
+
+.stat-card p {
+    margin: 10px 0 0;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.recent-activity {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-activity h2 {
+    margin: 0 0 20px;
+    color: #333;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #333;
+}
+
+tr:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %} 

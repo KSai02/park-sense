@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Exit QR for {{ plate }}</title>
+    <style>
+        body {
+            text-align: center;
+            padding-top: 80px;
+            font-family: Arial;
+        }
+        img {
+            margin-top: 20px;
+            width: 220px;
+            height: 220px;
+        }
+        .download-btn {
+            margin-top: 20px;
+            display: inline-block;
+            padding: 12px 20px;
+            background: #10b981;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Exit QR for {{ plate }}</h2>
+    <img src="{{ url_for('static', filename=qr_filename) }}" alt="Exit QR">
+    <p>Present this QR at the exit scanner.</p>
+
+    <!-- ✅ Download Button -->
+    <a href="{{ url_for('static', filename=qr_filename) }}" download="{{ qr_filename }}" class="download-btn">
+        ⬇ Download Exit QR
+    </a>
+</body>
+</html>

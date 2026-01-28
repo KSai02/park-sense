@@ -7,7 +7,7 @@ import uuid
 
 
 # MongoDB Atlas connection string - using direct connection
-MONGO_URI = 'mongodb+srv://henrypete0086:Henry%4012345@cluster0.18yj3ms.mongodb.net/test?retryWrites=true&w=majority'
+MONGO_URI = ''
 DB_NAME = 'Testing'
 
 class Database:

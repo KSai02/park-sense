@@ -1074,7 +1074,7 @@ def rescan():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    ngrok.set_auth_token("2wlTSWcqVfNMuYP3JIel3sPEkdI_2Wx1DGw1D3yueQ4QvyzG9") # Replace <YOUR_AUTHTOKEN> with your actual token
+    ngrok.set_auth_token("") # Replace <YOUR_AUTHTOKEN> with your actual token
     NGROK_URL = ngrok.connect(5000).public_url
     print(f" * Public URL: {NGROK_URL}")
     app.run()
